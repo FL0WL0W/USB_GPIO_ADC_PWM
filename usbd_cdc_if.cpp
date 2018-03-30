@@ -499,9 +499,113 @@ static int8_t CDC_Receive_FS(uint8_t* Buf, uint32_t *Len)
 	else if (command.find("INITIALIZE ADC ") == 0)
 	{
 		char responseText[64] = "Invalid Parameters\n";
+		unsigned int charPos = 15;
+		
+		GPIO_TypeDef *GPIO = 0;
+				
+		if (*Len > charPos)
+		{
+			switch (Buf[charPos])
+			{
+			case 'A':
+			case 'a':
+				GPIO = GPIOA;
+				break;
+			case 'B':
+			case 'b':
+				GPIO = GPIOB;
+				break;
+			default:
+				break;
+			}
+		}
+		
+		charPos += 1;
+				
+		unsigned int pinNum = 16;
+		if (*Len > charPos)
+		{
+			if (Buf[charPos + 1] == ' ')
+			{
+				char subbuf[1];
+				memcpy(subbuf, &Buf[charPos], 1);
+				pinNum = std::atoi(subbuf);
+				charPos += 2;
+			}
+			else
+			{
+				char subbuf[2];
+				memcpy(subbuf, &Buf[charPos], 2);
+				pinNum = std::atoi(subbuf);
+				charPos += 3;
+			}
+		}
+		
+		unsigned short GPIO_PIN = 0;
+		switch (pinNum)
+		{
+		case 0:
+			GPIO_PIN = GPIO_PIN_0;
+			break;
+		case 1:
+			GPIO_PIN = GPIO_PIN_1;
+			break;
+		case 2:
+			if (GPIO == GPIOB)
+				break;
+			GPIO_PIN = GPIO_PIN_2;
+			break;
+		case 3:
+			if (GPIO == GPIOB)
+				break;
+			GPIO_PIN = GPIO_PIN_3;
+			break;
+		case 4:
+			if (GPIO == GPIOB)
+				break;
+			GPIO_PIN = GPIO_PIN_4;
+			break;
+		case 5:
+			if (GPIO == GPIOB)
+				break;
+			GPIO_PIN = GPIO_PIN_5;
+			break;
+		case 6:
+			if (GPIO == GPIOB)
+				break;
+			GPIO_PIN = GPIO_PIN_6;
+			break;
+		case 7:
+			if (GPIO == GPIOB)
+				break;
+			GPIO_PIN = GPIO_PIN_7;
+			break;
+		}
+		
+		if (GPIO != 0 && pinNum < 8)
+		{
+			GPIO_InitTypeDef GPIO_InitStructure;
+		
+			GPIO_InitStructure.Pin = GPIO_PIN;
+		
+			GPIO_InitStructure.Speed = GPIO_SPEED_HIGH;
+			GPIO_InitStructure.Pull = GPIO_NOPULL;
+			GPIO_InitStructure.Mode = GPIO_MODE_ANALOG;
+			HAL_GPIO_Init(GPIOC, &GPIO_InitStructure);
+				
+			if (GPIO == GPIOA)
+			{
+				sprintf(responseText, "GPIO A%d Initialized as ADC input.\n", pinNum);
+			}
+			else if (GPIO == GPIOB)
+			{
+				sprintf(responseText, "GPIO B%d Initialized as ADC input.\n", pinNum);
+			}
+		}
+		
 		CDC_Transmit_FS((uint8_t*)responseText, strlen(responseText));
 	}
-	else if (command.find("INITIALIZE PWM ") == 0)
+	if(command.find("INITIALIZE PWM ") == 0)
 	{
 		char responseText[64] = "Invalid Parameters\n";
 		CDC_Transmit_FS((uint8_t*)responseText, strlen(responseText));
@@ -692,7 +796,119 @@ static int8_t CDC_Receive_FS(uint8_t* Buf, uint32_t *Len)
 	}
 	else if (command.find("READ GPIO ") == 0)
 	{
-		char responseText[64] = "Invalid Parameters\n";
+		const char * responseText = "Invalid Parameters\n";
+		unsigned int charPos = 9;
+		
+		GPIO_TypeDef *GPIO = 0;
+				
+		if (*Len > charPos)
+		{
+			switch (Buf[charPos])
+			{
+			case 'A':
+			case 'a':
+				GPIO = GPIOA;
+				break;
+			case 'B':
+			case 'b':
+				GPIO = GPIOB;
+				break;
+			case 'C':
+			case 'c':
+				GPIO = GPIOC;
+				break;
+			default:
+				break;
+			}
+		}
+		
+		charPos += 1;
+				
+		unsigned int pinNum = 16;
+		if (*Len > charPos)
+		{
+			if (Buf[charPos + 1] == ' ')
+			{
+				char subbuf[1];
+				memcpy(subbuf, &Buf[charPos], 1);
+				pinNum = std::atoi(subbuf);
+				charPos += 2;
+			}
+			else
+			{
+				char subbuf[2];
+				memcpy(subbuf, &Buf[charPos], 2);
+				pinNum = std::atoi(subbuf);
+				charPos += 3;
+			}
+		}
+		
+		unsigned short GPIO_PIN = 0;
+		switch (pinNum)
+		{
+		case 0:
+			GPIO_PIN = GPIO_PIN_0;
+			break;
+		case 1:
+			GPIO_PIN = GPIO_PIN_1;
+			break;
+		case 2:
+			GPIO_PIN = GPIO_PIN_2;
+			break;
+		case 3:
+			GPIO_PIN = GPIO_PIN_3;
+			break;
+		case 4:
+			GPIO_PIN = GPIO_PIN_4;
+			break;
+		case 5:
+			GPIO_PIN = GPIO_PIN_5;
+			break;
+		case 6:
+			GPIO_PIN = GPIO_PIN_6;
+			break;
+		case 7:
+			GPIO_PIN = GPIO_PIN_7;
+			break;
+		case 8:
+			GPIO_PIN = GPIO_PIN_8;
+			break;
+		case 9:
+			GPIO_PIN = GPIO_PIN_9;
+			break;
+		case 10:
+			GPIO_PIN = GPIO_PIN_10;
+			break;
+		case 11:
+			GPIO_PIN = GPIO_PIN_11;
+			break;
+		case 12:
+			GPIO_PIN = GPIO_PIN_12;
+			break;
+		case 13:
+			GPIO_PIN = GPIO_PIN_13;
+			break;
+		case 14:
+			GPIO_PIN = GPIO_PIN_14;
+			break;
+		case 15:
+			GPIO_PIN = GPIO_PIN_15;
+			break;
+		}
+		
+		if (GPIO != 0 && pinNum < 16)
+		{
+			GPIO_PinState state = HAL_GPIO_ReadPin(GPIO, GPIO_PIN);
+			
+			if (state == GPIO_PIN_SET)
+			{
+				responseText = "1\n";
+			}
+			else
+			{
+				responseText = "1\n";
+			}
+		}
 		CDC_Transmit_FS((uint8_t*)responseText, strlen(responseText));
 	}
 	else if (command.find("READ ADC ") == 0)
