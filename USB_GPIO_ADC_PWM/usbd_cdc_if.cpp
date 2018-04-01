@@ -326,7 +326,7 @@ static int8_t CDC_Receive_FS(uint8_t* Buf, uint32_t *Len)
 	
 	if (command.find("INITIALIZE GPIO") == 0)
 	{
-		char *responseText = "Invalid Parameters\nINITIALIZE GPIO [PIN] [IN|OUT]  [PULLUP|PULLDOWN]\n\n";
+		char responseText[71] = "Invalid Parameters\nINITIALIZE GPIO [PIN] [IN|OUT]  [PULLUP|PULLDOWN]\n\n";
 		unsigned int charPos = 16;
 		
 		GPIO_TypeDef *GPIO = 0;
@@ -523,7 +523,7 @@ static int8_t CDC_Receive_FS(uint8_t* Buf, uint32_t *Len)
 	}
 	else if (command.find("INITIALIZE ADC") == 0)
 	{
-		char * responseText = "Invalid Parameters\nINITIALIZE ADC [PIN] [CONVERSION TIME]\n\nAVAILABLE ADC PINS\nA0, A1, A2, A3, A4, A5, A6, A7, B0, B1\n\nAVAILABLE CONVERSION TIMES\n0.125us\n0.625us\n1.125us\n2.375us\n3.458us\n4.625us\n5.958us\n19.96us\n\n";
+		char responseText[211] = "Invalid Parameters\nINITIALIZE ADC [PIN] [CONVERSION TIME]\n\nAVAILABLE ADC PINS\nA0, A1, A2, A3, A4, A5, A6, A7, B0, B1\n\nAVAILABLE CONVERSION TIMES\n0.125us\n0.625us\n1.125us\n2.375us\n3.458us\n4.625us\n5.958us\n19.96us\n\n";
 		unsigned int charPos = 15;
 		
 		GPIO_TypeDef *GPIO = 0;
@@ -647,7 +647,7 @@ static int8_t CDC_Receive_FS(uint8_t* Buf, uint32_t *Len)
 	}
 	else if (command.find("INITIALIZE PWM CHANNEL") == 0)
 	{
-		char *responseText = "Invalid Parameters\nINITIALIZE PWM CHANNEL [CHANNEL] [FREQUENCY]\nAVAILABLE PWM CHANNELS-PINS\nChannel 1 - A8, A9, A10\t\t\tChannel 2 - A0, A1, A2, A3\nChannel 3 - A6, A7, B0, B1\t\tChannel 4 - B6, B7, B8, B9\n\n";
+		char responseText[202] = "Invalid Parameters\nINITIALIZE PWM CHANNEL [CHANNEL] [FREQUENCY]\nAVAILABLE PWM CHANNELS-PINS\nChannel 1 - A8, A9, A10\t\t\tChannel 2 - A0, A1, A2, A3\nChannel 3 - A6, A7, B0, B1\t\tChannel 4 - B6, B7, B8, B9\n\n";
 		
 		unsigned int charPos = 23;
 		
@@ -716,7 +716,7 @@ static int8_t CDC_Receive_FS(uint8_t* Buf, uint32_t *Len)
 	}
 	else if (command.find("INITIALIZE PWM PIN") == 0)
 	{
-		char *responseText = "Invalid Parameters\nINITIALIZE PWM PIN [PIN]\nAVAILABLE PWM CHANNELS-PINS\nChannel 1 - A8, A9, A10\t\t\tChannel 2 - A0, A1, A2, A3\nChannel 3 - A6, A7, B0, B1\t\tChannel 4 - B6, B7, B8, B9\n\n";
+		char responseText[182] = "Invalid Parameters\nINITIALIZE PWM PIN [PIN]\nAVAILABLE PWM CHANNELS-PINS\nChannel 1 - A8, A9, A10\t\t\tChannel 2 - A0, A1, A2, A3\nChannel 3 - A6, A7, B0, B1\t\tChannel 4 - B6, B7, B8, B9\n\n";
 		unsigned int charPos = 18;
 		
 		GPIO_TypeDef *GPIO = 0;
@@ -897,7 +897,7 @@ static int8_t CDC_Receive_FS(uint8_t* Buf, uint32_t *Len)
 	}
 	else if (command.find("SET GPIO") == 0)
 	{
-		char responseText[64] = "Invalid Parameters\nSET GPIO [PIN] [VALUE]\n\n";
+		char responseText[44] = "Invalid Parameters\nSET GPIO [PIN] [VALUE]\n\n";
 		unsigned int charPos = 9;
 		
 		GPIO_TypeDef *GPIO = 0;
@@ -1085,7 +1085,7 @@ static int8_t CDC_Receive_FS(uint8_t* Buf, uint32_t *Len)
 	}
 	else if (command.find("READ GPIO") == 0)
 	{
-		const char * responseText = "Invalid Parameters\nREAD GPIO [PIN]\n\n";
+		const char *responseText = "Invalid Parameters\nREAD GPIO [PIN]\n\n";
 		unsigned int charPos = 9;
 		
 		GPIO_TypeDef *GPIO = 0;
@@ -1195,14 +1195,14 @@ static int8_t CDC_Receive_FS(uint8_t* Buf, uint32_t *Len)
 			}
 			else
 			{
-				responseText = "1\n";
+				responseText = "0\n";
 			}
 		}
 		CDC_Transmit_FS((uint8_t*)responseText, strlen(responseText));
 	}
 	else if (command.find("READ ADC") == 0)
 	{
-		char responseText[64] = "Invalid Parameters\nREAD ADC [PIN]\n\n";
+		char responseText[36] = "Invalid Parameters\nREAD ADC [PIN]\n\n";
 		unsigned int charPos = 9;
 		
 		char GPIO = ' ';
@@ -1294,7 +1294,7 @@ static int8_t CDC_Receive_FS(uint8_t* Buf, uint32_t *Len)
 			if (HAL_ADC_PollForConversion(&g_AdcHandle, 1000000) == HAL_OK)
 			{
 				double ret = (HAL_ADC_GetValue(&g_AdcHandle) * 3.3 / 4096);
-				sprintf(responseText, "value: %1.6f\n", ret);
+				sprintf(responseText, "%1.6f\n", ret);
 			}
 		}
 		
@@ -1302,7 +1302,7 @@ static int8_t CDC_Receive_FS(uint8_t* Buf, uint32_t *Len)
 	}
 	else if (command.find("SET PWM") == 0)
 	{
-		char *responseText = "Invalid Parameters\nSET PWM [PIN] [DUTY CYCLE 0.000000-1.000000]\n\n";
+		char responseText[66] = "Invalid Parameters\nSET PWM [PIN] [DUTY CYCLE 0.000000-1.000000]\n\n";
 		
 		unsigned int charPos = 8;
 		
@@ -1465,7 +1465,7 @@ static int8_t CDC_Receive_FS(uint8_t* Buf, uint32_t *Len)
 	else
 	{
 		//help section
-		char *responseText = "AVAILABLE COMMANDS\nINITIALIZE GPIO [PIN] [IN|OUT]  [PULLUP|PULLDOWN]\nINITIALIZE ADC [PIN] [CONVERSION TIME]\nINITIALIZE PWM CHANNEL [CHANNEL] [FREQUENCY]\nINITIALIZE PWM PIN [PIN]\nSET GPIO [PIN] [VALUE]\nREAD GPIO [PIN]\nREAD ADC [PIN]\nSET PWM [PIN] [DUTY CYCLE 0.000000-1.000000]\n\n";
+		const char *responseText = "AVAILABLE COMMANDS\nINITIALIZE GPIO [PIN] [IN|OUT]  [PULLUP|PULLDOWN]\nINITIALIZE ADC [PIN] [CONVERSION TIME]\nINITIALIZE PWM CHANNEL [CHANNEL] [FREQUENCY]\nINITIALIZE PWM PIN [PIN]\nSET GPIO [PIN] [VALUE]\nREAD GPIO [PIN]\nREAD ADC [PIN]\nSET PWM [PIN] [DUTY CYCLE 0.000000-1.000000]\n\n";
 		CDC_Transmit_FS((uint8_t*)responseText, strlen(responseText));
 	}
 	
