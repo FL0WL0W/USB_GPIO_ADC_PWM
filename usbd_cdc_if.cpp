@@ -54,8 +54,10 @@
 
 #include "stdlib.h"
 #include <algorithm>
+#include <math.h>
 #include <string>
 #include <stm32f1xx_hal_adc.h>
+#include <stm32f1xx_hal_tim.h>
 #include "Globals.h"
 
 /* USER CODE END INCLUDE */
@@ -133,6 +135,19 @@ uint8_t UserRxBufferFS[APP_RX_DATA_SIZE];
 uint8_t UserTxBufferFS[APP_TX_DATA_SIZE];
 
 /* USER CODE BEGIN PRIVATE_VARIABLES */
+
+static TIM_HandleTypeDef s_TimerInstance1 = { 
+	.Instance = TIM1
+};
+static TIM_HandleTypeDef s_TimerInstance2 = { 
+	.Instance = TIM2
+};
+static TIM_HandleTypeDef s_TimerInstance3 = { 
+	.Instance = TIM3
+};
+static TIM_HandleTypeDef s_TimerInstance4 = { 
+	.Instance = TIM4
+};
 
 /* USER CODE END PRIVATE_VARIABLES */
 
@@ -311,7 +326,7 @@ static int8_t CDC_Receive_FS(uint8_t* Buf, uint32_t *Len)
 	
 	if (command.find("INITIALIZE GPIO") == 0)
 	{
-		char responseText[64] = "Invalid Parameters\nINITIALIZE GPIO [PIN] [IN|OUT]\n\n";
+		char *responseText = "Invalid Parameters\nINITIALIZE GPIO [PIN] [IN|OUT]  [PULLUP|PULLDOWN]\n\n";
 		unsigned int charPos = 16;
 		
 		GPIO_TypeDef *GPIO = 0;
@@ -632,12 +647,252 @@ static int8_t CDC_Receive_FS(uint8_t* Buf, uint32_t *Len)
 	}
 	else if (command.find("INITIALIZE PWM CHANNEL") == 0)
 	{
-		char *responseText = "NOT IMPLEMENTED\nINITIALIZE PWM CHANNEL [CHANNEL] [FREQUENCY]\nAVAILABLE PWM CHANNELS-PINS\nChannel 1 - A8, A9, A10\t\t\tChannel 2 - A0, A1, A2, A3\nChannel 3 - A6, A7, B0, B1\t\tChannel 4 - B6, B7, B8, B9\n\n";
+		char *responseText = "Invalid Parameters\nINITIALIZE PWM CHANNEL [CHANNEL] [FREQUENCY]\nAVAILABLE PWM CHANNELS-PINS\nChannel 1 - A8, A9, A10\t\t\tChannel 2 - A0, A1, A2, A3\nChannel 3 - A6, A7, B0, B1\t\tChannel 4 - B6, B7, B8, B9\n\n";
+		
+		unsigned int charPos = 23;
+		
+		TIM_HandleTypeDef *s_TimerInstance;
+		
+		if (*Len > charPos)
+		{
+			switch (Buf[charPos])
+			{
+			case '1':
+				s_TimerInstance = &s_TimerInstance1;
+				break;
+			case '2':
+				s_TimerInstance = &s_TimerInstance2;
+				break;
+			case '3':
+				s_TimerInstance = &s_TimerInstance3;
+				break;
+			case '4':
+				s_TimerInstance = &s_TimerInstance4;
+				break;
+			}
+		}
+		
+		charPos += 2;
+		
+		unsigned int freq = 0;
+		if (*Len > charPos)
+		{
+			char subbuf[20];
+			memcpy(subbuf, &Buf[charPos], *Len - charPos);
+			freq = std::atoi(subbuf);
+			charPos = *Len;
+		}
+		
+		if (freq > 0  && s_TimerInstance != 0)
+		{
+			(*s_TimerInstance).Init.Prescaler = std::max(1, (int)ceil(1098.6328125 / freq)); 			;
+			(*s_TimerInstance).Init.CounterMode = TIM_COUNTERMODE_UP;
+			(*s_TimerInstance).Init.Period = (int)ceil((72000000 / (*s_TimerInstance).Init.Prescaler) / freq);
+			(*s_TimerInstance).Init.ClockDivision = TIM_CLOCKDIVISION_DIV1;
+			(*s_TimerInstance).Init.RepetitionCounter = 0;
+			HAL_TIM_Base_Init(s_TimerInstance);
+			HAL_TIM_Base_Start(s_TimerInstance);
+			HAL_TIM_PWM_Start(s_TimerInstance, TIM_CHANNEL_ALL); 
+			
+			if (s_TimerInstance == &s_TimerInstance1)
+			{
+				sprintf(responseText, "PWM Channel 1 initialized with frequency%d\n", freq);
+			}
+			else if (s_TimerInstance == &s_TimerInstance2)
+			{
+				sprintf(responseText, "PWM Channel 2 initialized with frequency%d\n", freq);
+			}
+			else if (s_TimerInstance == &s_TimerInstance3)
+			{
+				sprintf(responseText, "PWM Channel 3 initialized with frequency%d\n", freq);
+			}
+			else if (s_TimerInstance == &s_TimerInstance4)
+			{
+				sprintf(responseText, "PWM Channel 4 initialized with frequency%d\n", freq);
+			}
+		}
+		
 		CDC_Transmit_FS((uint8_t*)responseText, strlen(responseText));
 	}
 	else if (command.find("INITIALIZE PWM PIN") == 0)
 	{
-		char *responseText = "NOT IMPLEMENTED\nINITIALIZE PWM PIN [PIN]\nAVAILABLE PWM CHANNELS-PINS\nChannel 1 - A8, A9, A10\t\t\tChannel 2 - A0, A1, A2, A3\nChannel 3 - A6, A7, B0, B1\t\tChannel 4 - B6, B7, B8, B9\n\n";
+		char *responseText = "Invalid Parameters\nINITIALIZE PWM PIN [PIN]\nAVAILABLE PWM CHANNELS-PINS\nChannel 1 - A8, A9, A10\t\t\tChannel 2 - A0, A1, A2, A3\nChannel 3 - A6, A7, B0, B1\t\tChannel 4 - B6, B7, B8, B9\n\n";
+		unsigned int charPos = 18;
+		
+		GPIO_TypeDef *GPIO = 0;
+				
+		if (*Len > charPos)
+		{
+			switch (Buf[charPos])
+			{
+			case 'A':
+			case 'a':
+				GPIO = GPIOA;
+				break;
+			case 'B':
+			case 'b':
+				GPIO = GPIOB;
+				break;
+			default:
+				break;
+			}
+		}
+		
+		charPos += 1;
+				
+		unsigned int pinNum = 16;
+		if (*Len > charPos)
+		{
+			if (Buf[charPos + 1] == ' ')
+			{
+				char subbuf[1];
+				memcpy(subbuf, &Buf[charPos], 1);
+				pinNum = std::atoi(subbuf);
+				charPos += 2;
+			}
+			else
+			{
+				char subbuf[2];
+				memcpy(subbuf, &Buf[charPos], 2);
+				pinNum = std::atoi(subbuf);
+				charPos += 3;
+			}
+		}
+		
+		unsigned short GPIO_PIN = 0;
+		unsigned int TIM_CHANNEL = 0;
+		TIM_HandleTypeDef *s_TimerInstance = 0;
+		switch (pinNum)
+		{
+		case 0:
+			if (GPIO == GPIOB)
+			{
+				s_TimerInstance = &s_TimerInstance3;
+				TIM_CHANNEL = TIM_CHANNEL_3;
+			}
+			else
+			{
+				s_TimerInstance = &s_TimerInstance2;
+				TIM_CHANNEL = TIM_CHANNEL_1;
+			}
+			GPIO_PIN = GPIO_PIN_0;
+			break;
+		case 1:
+			if (GPIO == GPIOB)
+			{
+				s_TimerInstance = &s_TimerInstance3;
+				TIM_CHANNEL = TIM_CHANNEL_4;
+			}
+			else
+			{
+				s_TimerInstance = &s_TimerInstance2;
+				TIM_CHANNEL = TIM_CHANNEL_2;
+			}
+			GPIO_PIN = GPIO_PIN_1;
+			break;
+		case 2:
+			if (GPIO == GPIOB)
+				break;
+			s_TimerInstance = &s_TimerInstance2;
+			TIM_CHANNEL = TIM_CHANNEL_3;
+			GPIO_PIN = GPIO_PIN_2;
+			break;
+		case 3:
+			if (GPIO == GPIOB)
+				break;
+			s_TimerInstance = &s_TimerInstance2;
+			TIM_CHANNEL = TIM_CHANNEL_4;
+			GPIO_PIN = GPIO_PIN_3;
+			break;
+		case 6:
+			if (GPIO == GPIOB)
+				s_TimerInstance = &s_TimerInstance4;
+			else
+				s_TimerInstance = &s_TimerInstance3;
+			TIM_CHANNEL = TIM_CHANNEL_1;
+			GPIO_PIN = GPIO_PIN_6;
+			break;
+		case 7:
+			if (GPIO == GPIOB)
+				s_TimerInstance = &s_TimerInstance4;
+			else
+				s_TimerInstance = &s_TimerInstance3;
+			TIM_CHANNEL = TIM_CHANNEL_2;
+			GPIO_PIN = GPIO_PIN_7;
+			break;
+		case 8:
+			if (GPIO == GPIOB)
+			{
+				s_TimerInstance = &s_TimerInstance4;
+				TIM_CHANNEL = TIM_CHANNEL_3;
+			}
+			else
+			{
+				s_TimerInstance = &s_TimerInstance1;
+				TIM_CHANNEL = TIM_CHANNEL_1;
+			}
+			GPIO_PIN = GPIO_PIN_8;
+			break;
+		case 9:
+			if (GPIO == GPIOB)
+			{
+				s_TimerInstance = &s_TimerInstance4;
+				TIM_CHANNEL = TIM_CHANNEL_4;
+			}
+			else
+			{
+				s_TimerInstance = &s_TimerInstance1;
+				TIM_CHANNEL = TIM_CHANNEL_2;
+			}
+			GPIO_PIN = GPIO_PIN_9;
+			break;
+		case 10:
+			if (GPIO == GPIOB)
+				break;
+			s_TimerInstance = &s_TimerInstance1;
+			TIM_CHANNEL = TIM_CHANNEL_3;
+			GPIO_PIN = GPIO_PIN_10;
+			break;
+		case 11:
+			if (GPIO == GPIOB)
+				break;
+			s_TimerInstance = &s_TimerInstance1;
+			TIM_CHANNEL = TIM_CHANNEL_4;
+			GPIO_PIN = GPIO_PIN_11;
+			break;
+		}
+		
+		if (*Len > charPos && GPIO != 0 && pinNum < 16 && s_TimerInstance != 0)
+		{
+			GPIO_InitTypeDef GPIO_InitStructure;
+		
+			GPIO_InitStructure.Pin = GPIO_PIN;
+		
+			GPIO_InitStructure.Speed = GPIO_SPEED_HIGH;
+			GPIO_InitStructure.Pull = GPIO_NOPULL;
+			GPIO_InitStructure.Mode = GPIO_MODE_AF_PP;
+			HAL_GPIO_Init(GPIOC, &GPIO_InitStructure);
+				
+			TIM_OC_InitTypeDef sConfigOC;
+			
+			sConfigOC.OCMode = TIM_OCMODE_PWM1;
+			sConfigOC.OCIdleState = TIM_OCIDLESTATE_SET;
+			sConfigOC.Pulse = 0;
+			sConfigOC.OCPolarity = TIM_OCPOLARITY_HIGH;
+			sConfigOC.OCFastMode = TIM_OCFAST_ENABLE;
+
+			HAL_TIM_PWM_ConfigChannel(s_TimerInstance, &sConfigOC, TIM_CHANNEL);
+			
+			if (GPIO == GPIOA)
+			{
+				sprintf(responseText, "GPIO A%d Initialized as pwm output.\n", pinNum);
+			}
+			else if (GPIO == GPIOB)
+			{
+				sprintf(responseText, "GPIO B%d Initialized as pwm output.\n", pinNum);
+			}
+		}
+		
 		CDC_Transmit_FS((uint8_t*)responseText, strlen(responseText));
 	}
 	else if (command.find("SET GPIO") == 0)
@@ -748,6 +1003,8 @@ static int8_t CDC_Receive_FS(uint8_t* Buf, uint32_t *Len)
 			{
 			case 'T':
 			case 't':
+			case 'H':
+			case 'h':
 			case '1':
 				HAL_GPIO_WritePin(GPIO, GPIO_PIN, GPIO_PIN_SET);
 				if (GPIO == GPIOA)
@@ -765,6 +1022,8 @@ static int8_t CDC_Receive_FS(uint8_t* Buf, uint32_t *Len)
 				break;
 			case 'F':
 			case 'f':
+			case 'L':
+			case 'l':
 			case '0':
 				HAL_GPIO_WritePin(GPIO, GPIO_PIN, GPIO_PIN_RESET);
 				if (GPIO == GPIOA)
@@ -1049,7 +1308,7 @@ static int8_t CDC_Receive_FS(uint8_t* Buf, uint32_t *Len)
 	else
 	{
 		//help section
-		char *responseText = "AVAILABLE COMMANDS\nINITIALIZE GPIO [PIN] [IN|OUT]\nINITIALIZE ADC [PIN] [CONVERSION TIME]\nINITIALIZE PWM CHANNEL [CHANNEL] [FREQUENCY]\nINITIALIZE PWM PIN [PIN]\nSET GPIO [PIN] [VALUE]\nREAD GPIO [PIN]\nREAD ADC [PIN]\nSET PWM [PIN] [DUTY CYCLE 0.000000-1.000000]\n\n";
+		char *responseText = "AVAILABLE COMMANDS\nINITIALIZE GPIO [PIN] [IN|OUT]  [PULLUP|PULLDOWN]\nINITIALIZE ADC [PIN] [CONVERSION TIME]\nINITIALIZE PWM CHANNEL [CHANNEL] [FREQUENCY]\nINITIALIZE PWM PIN [PIN]\nSET GPIO [PIN] [VALUE]\nREAD GPIO [PIN]\nREAD ADC [PIN]\nSET PWM [PIN] [DUTY CYCLE 0.000000-1.000000]\n\n";
 		CDC_Transmit_FS((uint8_t*)responseText, strlen(responseText));
 	}
 	
