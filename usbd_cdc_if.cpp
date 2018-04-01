@@ -1302,7 +1302,164 @@ static int8_t CDC_Receive_FS(uint8_t* Buf, uint32_t *Len)
 	}
 	else if (command.find("SET PWM") == 0)
 	{
-		char responseText[64] = "NOT IMPLEMENTED\nSET PWM [PIN] [DUTY CYCLE 0.000000-1.000000]\n\n";
+		char *responseText = "Invalid Parameters\nSET PWM [PIN] [DUTY CYCLE 0.000000-1.000000]\n\n";
+		
+		unsigned int charPos = 8;
+		
+		GPIO_TypeDef *GPIO = 0;
+				
+		if (*Len > charPos)
+		{
+			switch (Buf[charPos])
+			{
+			case 'A':
+			case 'a':
+				GPIO = GPIOA;
+				break;
+			case 'B':
+			case 'b':
+				GPIO = GPIOB;
+				break;
+			default:
+				break;
+			}
+		}
+		
+		charPos += 1;
+				
+		unsigned int pinNum = 16;
+		if (*Len > charPos)
+		{
+			if (Buf[charPos + 1] == ' ')
+			{
+				char subbuf[1];
+				memcpy(subbuf, &Buf[charPos], 1);
+				pinNum = std::atoi(subbuf);
+				charPos += 2;
+			}
+			else
+			{
+				char subbuf[2];
+				memcpy(subbuf, &Buf[charPos], 2);
+				pinNum = std::atoi(subbuf);
+				charPos += 3;
+			}
+		}
+		
+		float dutyCycle = 0;
+		if (*Len > charPos)
+		{
+			char subbuf[20];
+			memcpy(subbuf, &Buf[charPos], *Len - charPos);
+			dutyCycle = std::atof(subbuf);
+			charPos = *Len;
+		}
+		
+		unsigned int TIM_CHANNEL = 0;
+		TIM_HandleTypeDef *s_TimerInstance = 0;
+		switch (pinNum)
+		{
+		case 0:
+			if (GPIO == GPIOB)
+			{
+				s_TimerInstance = &s_TimerInstance3;
+				TIM_CHANNEL = TIM_CHANNEL_3; 
+			}
+			else
+			{
+				s_TimerInstance = &s_TimerInstance2;
+				TIM_CHANNEL = TIM_CHANNEL_1;
+			}
+			break;
+		case 1:
+			if (GPIO == GPIOB)
+			{
+				s_TimerInstance = &s_TimerInstance3;
+				TIM_CHANNEL = TIM_CHANNEL_4;
+			}
+			else
+			{
+				s_TimerInstance = &s_TimerInstance2;
+				TIM_CHANNEL = TIM_CHANNEL_2;
+			}
+			break;
+		case 2:
+			if (GPIO == GPIOB)
+				break;
+			s_TimerInstance = &s_TimerInstance2;
+			TIM_CHANNEL = TIM_CHANNEL_3;
+			break;
+		case 3:
+			if (GPIO == GPIOB)
+				break;
+			s_TimerInstance = &s_TimerInstance2;
+			TIM_CHANNEL = TIM_CHANNEL_4;
+			break;
+		case 6:
+			if (GPIO == GPIOB)
+				s_TimerInstance = &s_TimerInstance4;
+			else
+				s_TimerInstance = &s_TimerInstance3;
+			TIM_CHANNEL = TIM_CHANNEL_1;
+			break;
+		case 7:
+			if (GPIO == GPIOB)
+				s_TimerInstance = &s_TimerInstance4;
+			else
+				s_TimerInstance = &s_TimerInstance3;
+			TIM_CHANNEL = TIM_CHANNEL_2;
+			break;
+		case 8:
+			if (GPIO == GPIOB)
+			{
+				s_TimerInstance = &s_TimerInstance4;
+				TIM_CHANNEL = TIM_CHANNEL_3;
+			}
+			else
+			{
+				s_TimerInstance = &s_TimerInstance1;
+				TIM_CHANNEL = TIM_CHANNEL_1;
+			}
+			break;
+		case 9:
+			if (GPIO == GPIOB)
+			{
+				s_TimerInstance = &s_TimerInstance4;
+				TIM_CHANNEL = TIM_CHANNEL_4;
+			}
+			else
+			{
+				s_TimerInstance = &s_TimerInstance1;
+				TIM_CHANNEL = TIM_CHANNEL_2;
+			}
+			break;
+		case 10:
+			if (GPIO == GPIOB)
+				break;
+			s_TimerInstance = &s_TimerInstance1;
+			TIM_CHANNEL = TIM_CHANNEL_3;
+			break;
+		case 11:
+			if (GPIO == GPIOB)
+				break;
+			s_TimerInstance = &s_TimerInstance1;
+			TIM_CHANNEL = TIM_CHANNEL_4;
+			break;
+		}
+		
+		if (*Len > charPos && GPIO != 0 && pinNum < 16 && s_TimerInstance != 0)
+		{
+			__HAL_TIM_SET_COMPARE(s_TimerInstance, TIM_CHANNEL, __HAL_TIM_GET_AUTORELOAD(s_TimerInstance) * dutyCycle);
+			if (GPIO == GPIOA)
+			{
+				sprintf(responseText, "GPIO A%d PWM Set to %1.6f.\n", pinNum, dutyCycle);
+			}
+			else if (GPIO == GPIOB)
+			{
+				sprintf(responseText, "GPIO B%d PWM Set to %1.6f.\n", pinNum, dutyCycle);
+			}
+		}
+		
 		CDC_Transmit_FS((uint8_t*)responseText, strlen(responseText));
 	}
 	else
