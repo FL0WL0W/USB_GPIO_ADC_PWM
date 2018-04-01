@@ -22,7 +22,7 @@ GPIO
       * The pin must first be initialized as an output.
       * The value can be set to 0, L, LOW, F, or FALSE for a low value and 1, H, HIGH, T, or TRUE for a high value.
   3. Read a GPIO pin. READ GPIO [PIN]
-      * The value returned with be a 1 for a high value and 0 for a low value.
+      * The value returned is a 1 for a high value and 0 for a low value.
 
 ADC
   1. Enable an ADC pin. INITIALIZE ADC [PIN] [CONVERSION TIME]
