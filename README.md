@@ -29,4 +29,5 @@ ADC
       * The available ADC pins are A0-A7 and B0-B1.
       * Conversion time is optional, the available conversion times are 0.125us, 0.625us, 1.125us, 2.375us, 3.458us, 4.625us, 5.958us and 19.96us. 0.125us is chosen if no conversion time is selected.
   2. read an ADC pin. READ ADC [PIN]
+      * The pin must first be initialized as an ADC pin.
       * The value returned is between 0V and 3.3V.
