@@ -677,7 +677,7 @@ static int8_t CDC_Receive_FS(uint8_t* Buf, uint32_t *Len)
 		unsigned int freq = 0;
 		if (*Len > charPos)
 		{
-			char subbuf[20];
+			char subbuf[*Len - charPos];
 			memcpy(subbuf, &Buf[charPos], *Len - charPos);
 			freq = std::atoi(subbuf);
 			charPos = *Len;
@@ -1351,7 +1351,7 @@ static int8_t CDC_Receive_FS(uint8_t* Buf, uint32_t *Len)
 		float dutyCycle = -1;
 		if (*Len > charPos)
 		{
-			char subbuf[20];
+			char subbuf[*Len - charPos];
 			memcpy(subbuf, &Buf[charPos], *Len - charPos);
 			dutyCycle = std::atof(subbuf);
 			if (dutyCycle > 1)
