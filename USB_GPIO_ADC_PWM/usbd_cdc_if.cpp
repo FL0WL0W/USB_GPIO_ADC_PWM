@@ -445,7 +445,7 @@ static int8_t CDC_Receive_FS(uint8_t* Buf, uint32_t *Len)
 				{
 					GPIO_InitStructure.Pull = GPIO_PULLDOWN;
 				}
-				HAL_GPIO_Init(GPIOC, &GPIO_InitStructure);
+				HAL_GPIO_Init(GPIO, &GPIO_InitStructure);
 				
 				if (GPIO == GPIOA)
 				{
@@ -502,7 +502,7 @@ static int8_t CDC_Receive_FS(uint8_t* Buf, uint32_t *Len)
 				GPIO_InitStructure.Speed = GPIO_SPEED_HIGH;
 				GPIO_InitStructure.Pull = GPIO_NOPULL;
 				GPIO_InitStructure.Mode = GPIO_MODE_OUTPUT_PP;
-				HAL_GPIO_Init(GPIOC, &GPIO_InitStructure);
+				HAL_GPIO_Init(GPIO, &GPIO_InitStructure);
 				
 				if (GPIO == GPIOA)
 				{
@@ -616,7 +616,7 @@ static int8_t CDC_Receive_FS(uint8_t* Buf, uint32_t *Len)
 			GPIO_InitStructure.Speed = GPIO_SPEED_HIGH;
 			GPIO_InitStructure.Pull = GPIO_NOPULL;
 			GPIO_InitStructure.Mode = GPIO_MODE_ANALOG;
-			HAL_GPIO_Init(GPIOC, &GPIO_InitStructure);
+			HAL_GPIO_Init(GPIO, &GPIO_InitStructure);
 							
 			unsigned int conversionSpeed = ADC_SAMPLETIME_1CYCLE_5;
 			
@@ -690,25 +690,25 @@ static int8_t CDC_Receive_FS(uint8_t* Buf, uint32_t *Len)
 			(*s_TimerInstance).Init.Period = (int)ceil((72000000 / (*s_TimerInstance).Init.Prescaler) / freq);
 			(*s_TimerInstance).Init.ClockDivision = TIM_CLOCKDIVISION_DIV1;
 			(*s_TimerInstance).Init.RepetitionCounter = 0;
-			HAL_TIM_Base_Init(s_TimerInstance);
-			HAL_TIM_Base_Start(s_TimerInstance);
-			HAL_TIM_PWM_Start(s_TimerInstance, TIM_CHANNEL_ALL); 
+			HAL_TIM_PWM_Init(s_TimerInstance);
+			HAL_TIM_PWM_MspInit(s_TimerInstance);
+			HAL_TIM_Base_Start(s_TimerInstance); 
 			
 			if (s_TimerInstance == &s_TimerInstance1)
 			{
-				sprintf(responseText, "PWM Channel 1 initialized with frequency%d\n", freq);
+				sprintf(responseText, "PWM Channel 1 initialized with frequency %d\n", freq);
 			}
 			else if (s_TimerInstance == &s_TimerInstance2)
 			{
-				sprintf(responseText, "PWM Channel 2 initialized with frequency%d\n", freq);
+				sprintf(responseText, "PWM Channel 2 initialized with frequency %d\n", freq);
 			}
 			else if (s_TimerInstance == &s_TimerInstance3)
 			{
-				sprintf(responseText, "PWM Channel 3 initialized with frequency%d\n", freq);
+				sprintf(responseText, "PWM Channel 3 initialized with frequency %d\n", freq);
 			}
 			else if (s_TimerInstance == &s_TimerInstance4)
 			{
-				sprintf(responseText, "PWM Channel 4 initialized with frequency%d\n", freq);
+				sprintf(responseText, "PWM Channel 4 initialized with frequency %d\n", freq);
 			}
 		}
 		
@@ -717,7 +717,7 @@ static int8_t CDC_Receive_FS(uint8_t* Buf, uint32_t *Len)
 	else if (command.find("INITIALIZE PWM PIN") == 0)
 	{
 		char responseText[182] = "Invalid Parameters\nINITIALIZE PWM PIN [PIN]\nAVAILABLE PWM CHANNELS-PINS\nChannel 1 - A8, A9, A10\t\t\tChannel 2 - A0, A1, A2, A3\nChannel 3 - A6, A7, B0, B1\t\tChannel 4 - B6, B7, B8, B9\n\n";
-		unsigned int charPos = 18;
+		unsigned int charPos = 19;
 		
 		GPIO_TypeDef *GPIO = 0;
 				
@@ -862,7 +862,7 @@ static int8_t CDC_Receive_FS(uint8_t* Buf, uint32_t *Len)
 			break;
 		}
 		
-		if (*Len > charPos && GPIO != 0 && pinNum < 16 && s_TimerInstance != 0)
+		if (GPIO != 0 && pinNum < 16 && s_TimerInstance != 0)
 		{
 			GPIO_InitTypeDef GPIO_InitStructure;
 		
@@ -871,7 +871,7 @@ static int8_t CDC_Receive_FS(uint8_t* Buf, uint32_t *Len)
 			GPIO_InitStructure.Speed = GPIO_SPEED_HIGH;
 			GPIO_InitStructure.Pull = GPIO_NOPULL;
 			GPIO_InitStructure.Mode = GPIO_MODE_AF_PP;
-			HAL_GPIO_Init(GPIOC, &GPIO_InitStructure);
+			HAL_GPIO_Init(GPIO, &GPIO_InitStructure);
 				
 			TIM_OC_InitTypeDef sConfigOC;
 			
@@ -879,9 +879,11 @@ static int8_t CDC_Receive_FS(uint8_t* Buf, uint32_t *Len)
 			sConfigOC.OCIdleState = TIM_OCIDLESTATE_SET;
 			sConfigOC.Pulse = 0;
 			sConfigOC.OCPolarity = TIM_OCPOLARITY_HIGH;
-			sConfigOC.OCFastMode = TIM_OCFAST_ENABLE;
+			sConfigOC.OCFastMode = TIM_OCFAST_DISABLE;
 
 			HAL_TIM_PWM_ConfigChannel(s_TimerInstance, &sConfigOC, TIM_CHANNEL);
+			
+			HAL_TIM_PWM_Start(s_TimerInstance, TIM_CHANNEL); 
 			
 			if (GPIO == GPIOA)
 			{
@@ -1346,12 +1348,14 @@ static int8_t CDC_Receive_FS(uint8_t* Buf, uint32_t *Len)
 			}
 		}
 		
-		float dutyCycle = 0;
+		float dutyCycle = -1;
 		if (*Len > charPos)
 		{
 			char subbuf[20];
 			memcpy(subbuf, &Buf[charPos], *Len - charPos);
 			dutyCycle = std::atof(subbuf);
+			if (dutyCycle > 1)
+				dutyCycle - 1;
 			charPos = *Len;
 		}
 		
@@ -1447,9 +1451,11 @@ static int8_t CDC_Receive_FS(uint8_t* Buf, uint32_t *Len)
 			break;
 		}
 		
-		if (*Len > charPos && GPIO != 0 && pinNum < 16 && s_TimerInstance != 0)
+		if (GPIO != 0 && pinNum < 16 && dutyCycle >= 0 && s_TimerInstance != 0)
 		{
-			__HAL_TIM_SET_COMPARE(s_TimerInstance, TIM_CHANNEL, __HAL_TIM_GET_AUTORELOAD(s_TimerInstance) * dutyCycle);
+			unsigned int arr = __HAL_TIM_GET_AUTORELOAD(s_TimerInstance);
+			unsigned int pw = arr * dutyCycle;
+			__HAL_TIM_SET_COMPARE(s_TimerInstance, TIM_CHANNEL, pw);
 			if (GPIO == GPIOA)
 			{
 				sprintf(responseText, "GPIO A%d PWM Set to %1.6f.\n", pinNum, dutyCycle);
