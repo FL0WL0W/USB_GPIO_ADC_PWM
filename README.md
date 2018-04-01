@@ -28,6 +28,19 @@ ADC
   1. Enable an ADC pin. INITIALIZE ADC [PIN] [CONVERSION TIME]
       * The available ADC pins are A0-A7 and B0-B1.
       * Conversion time is optional, the available conversion times are 0.125us, 0.625us, 1.125us, 2.375us, 3.458us, 4.625us, 5.958us and 19.96us. 0.125us is chosen if no conversion time is selected.
-  2. read an ADC pin. READ ADC [PIN]
+  2. Read an ADC pin. READ ADC [PIN]
       * The pin must first be initialized as an ADC pin.
       * The value returned is between 0V and 3.3V.
+      
+PWM
+  1. Enabled a PWM channel. INITIALIZE PWM CHANNEL [CHANNEL] [FREQUENCY]
+      * The STM32F103C8 has 4 different PWM channels. Each channel can control up to 4 PWM outputs. Each channel has a set frequency for its PWM outputs
+  2. Enable a PWM pin. INITIALIZE PWM PIN [PIN]
+      * Available Channels-Pin. 
+          * Channel 1 - A8, A9, A10
+          * Channel 2 - A0, A1, A2, A3
+          * Channel 3 - A6, A7, B0, B1
+          * Channel 4 - B6, B7, B8, B9
+  3. Set a PWM pin. SET PWM [PIN] [DUTY CYCLE 0.000000-1.000000]
+      * The pin must first be initialized as a PWM pin.
+      * Duty cycle represented between 0.000000 for always low to 1.000000 for always high.
