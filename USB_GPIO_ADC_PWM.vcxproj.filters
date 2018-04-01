@@ -516,6 +516,9 @@
     <ClCompile Include="usbd_cdc_if.cpp">
       <Filter>Source files</Filter>
     </ClCompile>
+    <ClCompile Include="Globals.cpp">
+      <Filter>Source files</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="stm32f1xx_it.h">
@@ -549,6 +552,9 @@
       <Filter>Header files</Filter>
     </ClInclude>
     <ClInclude Include="main.h">
+      <Filter>Header files</Filter>
+    </ClInclude>
+    <ClInclude Include="Globals.h">
       <Filter>Header files</Filter>
     </ClInclude>
   </ItemGroup>

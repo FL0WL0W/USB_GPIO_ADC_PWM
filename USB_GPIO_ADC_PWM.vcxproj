@@ -39,7 +39,10 @@
     <ToolchainID>com.visualgdb.arm-eabi</ToolchainID>
     <ToolchainVersion>7.2.0/8.0.1/r2</ToolchainVersion>
   </PropertyGroup>
-  <ItemDefinitionGroup>
+  <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug|VisualGDB'">
+    <Link>
+      <AdditionalOptions>-u _printf_float %(AdditionalOptions)</AdditionalOptions>
+    </Link>
   </ItemDefinitionGroup>
   <ItemGroup>
   </ItemGroup>
@@ -47,6 +50,7 @@
   <ImportGroup Label="ExtensionTargets">
   </ImportGroup>
   <ItemGroup>
+    <ClCompile Include="Globals.cpp" />
     <ClCompile Include="LEDBlink.cpp" />
     <ClCompile Include="main.cpp" />
     <ClCompile Include="stm32f1xx_hal_msp.c" />
@@ -60,6 +64,7 @@
     <ClCompile Include="usbd_desc.c" />
     <ClCompile Include="usbd_ioreq.c" />
     <ClCompile Include="usb_device.c" />
+    <ClInclude Include="Globals.h" />
     <ClInclude Include="main.h" />
     <ClInclude Include="stm32f1xx_it.h" />
     <ClInclude Include="usbd_cdc.h" />

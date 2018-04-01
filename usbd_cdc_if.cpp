@@ -55,6 +55,8 @@
 #include "stdlib.h"
 #include <algorithm>
 #include <string>
+#include <stm32f1xx_hal_adc.h>
+#include "Globals.h"
 
 /* USER CODE END INCLUDE */
 
@@ -292,14 +294,22 @@ static int8_t CDC_Control_FS(uint8_t cmd, uint8_t* pbuf, uint16_t length)
   * @param  Len: Number of data received (in bytes)
   * @retval Result of the operation: USBD_OK if all operations are OK else USBD_FAIL
   */
-void *buildConfig;
+//			ADC_SAMPLETIME_1CYCLE_5			0.125 us
+//			ADC_SAMPLETIME_7CYCLES_5		0.625 us
+//			ADC_SAMPLETIME_13CYCLES_5		1.125 us
+//			ADC_SAMPLETIME_28CYCLES_5		2.375 us
+//			ADC_SAMPLETIME_41CYCLES_5		3.458 us
+//			ADC_SAMPLETIME_55CYCLES_5		4.625 us
+//			ADC_SAMPLETIME_71CYCLES_5		5.958 us
+//			ADC_SAMPLETIME_239CYCLES_5		19.96 us
+unsigned int ADC_SAMPLETIME[10];
 static int8_t CDC_Receive_FS(uint8_t* Buf, uint32_t *Len)
 {
 	/* USER CODE BEGIN 6 */	
 	std::string command = std::string((char *)Buf, *Len);
 	std::transform(command.begin(), command.end(), command.begin(),::toupper);
 	
-	if (*Len > 19 && command .find("INITIALIZE GPIO ") == 0)
+	if (*Len > 19 && command.find("INITIALIZE GPIO ") == 0)
 	{
 		char responseText[64] = "Invalid Parameters\n";
 		unsigned int charPos = 16;
@@ -592,7 +602,17 @@ static int8_t CDC_Receive_FS(uint8_t* Buf, uint32_t *Len)
 			GPIO_InitStructure.Pull = GPIO_NOPULL;
 			GPIO_InitStructure.Mode = GPIO_MODE_ANALOG;
 			HAL_GPIO_Init(GPIOC, &GPIO_InitStructure);
-				
+							
+			unsigned int conversionSpeed = ADC_SAMPLETIME_1CYCLE_5;
+			
+			if(command.find("0.625"))		conversionSpeed = ADC_SAMPLETIME_7CYCLES_5;
+			else if(command.find("1.125"))	conversionSpeed = ADC_SAMPLETIME_13CYCLES_5;
+			else if(command.find("2.375"))	conversionSpeed = ADC_SAMPLETIME_28CYCLES_5;
+			else if(command.find("3.458"))	conversionSpeed = ADC_SAMPLETIME_41CYCLES_5;
+			else if(command.find("4.625"))	conversionSpeed = ADC_SAMPLETIME_55CYCLES_5;
+			else if(command.find("5.958"))	conversionSpeed = ADC_SAMPLETIME_71CYCLES_5;
+			else if(command.find("19.96"))	conversionSpeed = ADC_SAMPLETIME_239CYCLES_5;
+			
 			if (GPIO == GPIOA)
 			{
 				sprintf(responseText, "GPIO A%d Initialized as ADC input.\n", pinNum);
@@ -601,6 +621,11 @@ static int8_t CDC_Receive_FS(uint8_t* Buf, uint32_t *Len)
 			{
 				sprintf(responseText, "GPIO B%d Initialized as ADC input.\n", pinNum);
 			}
+			
+			if (GPIO == GPIOB)
+				pinNum += 8;
+			
+			ADC_SAMPLETIME[pinNum] = conversionSpeed;
 		}
 		
 		CDC_Transmit_FS((uint8_t*)responseText, strlen(responseText));
@@ -914,6 +939,101 @@ static int8_t CDC_Receive_FS(uint8_t* Buf, uint32_t *Len)
 	else if (command.find("READ ADC ") == 0)
 	{
 		char responseText[64] = "Invalid Parameters\n";
+		unsigned int charPos = 9;
+		
+		char GPIO = ' ';
+				
+		if (*Len > charPos)
+		{
+			switch (Buf[charPos])
+			{
+			case 'A':
+			case 'a':
+				GPIO = 'A';
+				break;
+			case 'B':
+			case 'b':
+				GPIO = 'B';
+				break;
+			default:
+				break;
+			}
+		}
+		
+		charPos += 1;
+				
+		unsigned int pinNum = 16;
+		if (*Len > charPos)
+		{
+			if (Buf[charPos + 1] == ' ')
+			{
+				char subbuf[1];
+				memcpy(subbuf, &Buf[charPos], 1);
+				pinNum = std::atoi(subbuf);
+				charPos += 2;
+			}
+			else
+			{
+				char subbuf[2];
+				memcpy(subbuf, &Buf[charPos], 2);
+				pinNum = std::atoi(subbuf);
+				charPos += 3;
+			}
+		}
+		
+		if (GPIO == 'B')
+			pinNum += 8;
+			
+		if (GPIO != ' ' && pinNum < 10)
+		{
+			ADC_ChannelConfTypeDef adcChannel;
+  
+			switch (pinNum)
+			{
+			case 0:
+				adcChannel.Channel = ADC_CHANNEL_0;
+				break;
+			case 1:
+				adcChannel.Channel = ADC_CHANNEL_1;
+				break;
+			case 2:
+				adcChannel.Channel = ADC_CHANNEL_2;
+				break;
+			case 3:
+				adcChannel.Channel = ADC_CHANNEL_3;
+				break;
+			case 4:
+				adcChannel.Channel = ADC_CHANNEL_4;
+				break;
+			case 5:
+				adcChannel.Channel = ADC_CHANNEL_5;
+				break;
+			case 6:
+				adcChannel.Channel = ADC_CHANNEL_6;
+				break;
+			case 7:
+				adcChannel.Channel = ADC_CHANNEL_7;
+				break;
+			case 8:
+				adcChannel.Channel = ADC_CHANNEL_8;
+				break;
+			case 9:
+				adcChannel.Channel = ADC_CHANNEL_9;
+				break;
+			}
+			
+			adcChannel.Channel = ADC_CHANNEL_11;
+			adcChannel.SamplingTime = ADC_SAMPLETIME[pinNum];
+						
+			HAL_ADC_Start(&g_AdcHandle);
+			
+			if (HAL_ADC_PollForConversion(&g_AdcHandle, 1000000) == HAL_OK)
+			{
+				double ret = (HAL_ADC_GetValue(&g_AdcHandle) * 3.3 / 4096);
+				sprintf(responseText, "value: %1.6f\n", ret);
+			}
+		}
+		
 		CDC_Transmit_FS((uint8_t*)responseText, strlen(responseText));
 	}
 	else if (command.find("SET PWM ") == 0)

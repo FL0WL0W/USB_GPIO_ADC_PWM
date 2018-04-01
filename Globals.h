@@ -1,0 +1,1 @@
+extern ADC_HandleTypeDef g_AdcHandle;

@@ -51,7 +51,9 @@
 #include "usb_device.h"
 #include "stdlib.h"
 /* USER CODE BEGIN Includes */
-
+#include "stm32f1xx_hal_dma.h"
+#include "stm32f1xx_hal_adc.h"
+#include "Globals.h"
 /* USER CODE END Includes */
 
 /* Private variables ---------------------------------------------------------*/
@@ -68,6 +70,7 @@ static void MX_GPIO_Init(void);
 /* USER CODE BEGIN PFP */
 /* Private function prototypes -----------------------------------------------*/
 void USB_DEVICE_MasterHardReset(void);
+void ConfigureADC();
 
 /* USER CODE END PFP */
 
@@ -119,6 +122,7 @@ int main(void)
   MX_GPIO_Init();
   USB_DEVICE_MasterHardReset();
   MX_USB_DEVICE_Init();
+  ConfigureADC();
 }
 
 /**
@@ -201,6 +205,21 @@ static void MX_GPIO_Init(void)
 }
 
 /* USER CODE BEGIN 4 */
+
+void ConfigureADC()
+{	
+	g_AdcHandle.Instance = ADC1;
+	
+	g_AdcHandle.Init.ScanConvMode = DISABLE;
+	g_AdcHandle.Init.ContinuousConvMode = DISABLE;
+	g_AdcHandle.Init.DiscontinuousConvMode = DISABLE;
+	g_AdcHandle.Init.NbrOfDiscConversion = 0;
+	g_AdcHandle.Init.ExternalTrigConv = ADC_SOFTWARE_START;
+	g_AdcHandle.Init.DataAlign = ADC_DATAALIGN_RIGHT;
+	g_AdcHandle.Init.NbrOfConversion = 1;
+	
+	HAL_ADC_Init(&g_AdcHandle);
+}
 
 /* USER CODE END 4 */
 
