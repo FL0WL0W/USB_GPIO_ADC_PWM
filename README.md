@@ -17,6 +17,18 @@ LINUX
 1. The bin file to load onto the STM32F103C8 is located in the releases folder.
 2. The STM32F103C8 can be flashed with multiple different methods. There is an excelent tutorial on how to do that here http://wiki.stm32duino.com/index.php?title=Burning_the_bootloader
 
+# Specs
+  ADC: 12 bit
+  PWM < 1098hz: 16 bit
+  PWM 1098-2196hz: 15 bit
+  PWM 2196-4392hz: 14 bit
+  PWM 4.4kHz-8.8kHz: 13 bit
+  PWM 8.8kHz-17.6kHz: 12 bit
+  PWM 17.6kHz-35.1kHz: 11 bit
+  PWM 35.1kHz-70.3kHz: 10 bit
+  PWM 70.3kHz-140.5kHz: 9 bit
+  PWM 140.5kHz-250kHz: 8 bot
+
 # HOW-TO
 
 GPIO
