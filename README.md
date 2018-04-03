@@ -1,6 +1,6 @@
 # Overview
 
-This project aims to create an easy to use usb interface to control an STM32F103C8 (blue pill). It has the ability to read and write the GPIO pins, read the ADC pins and return the voltage (12 bit resolution), and control the pwm outputs (up to 16 bit resolution and between 1 - 250 khz frequency).
+This project aims to create an easy to use usb interface to control an STM32F103C8 (blue pill). It has the ability to read and write the GPIO pins, read the ADC pins and return the voltage (12 bit resolution), and control the pwm outputs (up to 16 bit resolution and between 1 Hz - 250 kHz frequency).
 
 # Drivers
 
@@ -49,3 +49,7 @@ PWM
   3. Set a PWM pin. SET PWM [PIN] [DUTY CYCLE 0.000000-1.000000]
       * The pin must first be initialized as a PWM pin.
       * Duty cycle represented between 0.000000 for always low to 1.000000 for always high.
+      
+Turn off response messages
+  1. It is sometimes necessary to disable the response messages so as not to interfere with READ ADC and READ GPIO. This can be done by sending DISABLE RESPONSES
+  2. To re-enable responses, send ENABLE RESPONSES
