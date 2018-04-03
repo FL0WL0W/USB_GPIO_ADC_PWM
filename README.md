@@ -11,7 +11,12 @@ WINDOWS
 LINUX
   * To us this device on Linux you will need the ttyACM drivers enabled in the kernel. This driver is usually enabled by default.
   * The device will show up in /dev as a ttyACM device
-  
+
+# Flashing STM32F103C8
+
+1. The bin file to load onto the STM32F103C8 is located in the releases folder.
+2. The STM32F103C8 can be flashed with multiple different methods. There is an excelent tutorial on how to do that here http://wiki.stm32duino.com/index.php?title=Burning_the_bootloader
+
 # HOW-TO
 
 GPIO
