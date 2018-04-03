@@ -28,6 +28,7 @@ GPIO
       * The value can be set to 0, L, LOW, F, or FALSE for a low value and 1, H, HIGH, T, or TRUE for a high value.
   3. Read a GPIO pin. READ GPIO [PIN]
       * The value returned is a 1 for a high value and 0 for a low value.
+      * Multiple pins can be read in 1 command by sending READ GPIO [PIN] [PIN] [PIN] ...
 
 ADC
   1. Enable an ADC pin. INITIALIZE ADC [PIN] [CONVERSION TIME]
@@ -36,6 +37,7 @@ ADC
   2. Read an ADC pin. READ ADC [PIN]
       * The pin must first be initialized as an ADC pin.
       * The value returned is between 0V and 3.3V.
+      * Multiple pins can be read in 1 command by sending READ ADC [PIN] [PIN] [PIN] ...
       
 PWM
   1. Enabled a PWM channel. INITIALIZE PWM CHANNEL [CHANNEL] [FREQUENCY]
