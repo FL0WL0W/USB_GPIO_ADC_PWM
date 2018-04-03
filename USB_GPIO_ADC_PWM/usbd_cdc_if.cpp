@@ -450,11 +450,11 @@ static int8_t CDC_Receive_FS(uint8_t* Buf, uint32_t *Len)
 				GPIO_InitStructure.Speed = GPIO_SPEED_HIGH;
 				GPIO_InitStructure.Pull = GPIO_NOPULL;
 				GPIO_InitStructure.Mode = GPIO_MODE_INPUT;
-				if (command.find("UP") > charPos)
+				if (command.find("UP") > charPos && command.find("UP") < *Len)
 				{
 					GPIO_InitStructure.Pull = GPIO_PULLUP;
 				}
-				else if (command.find("DOWN") > charPos)
+				else if (command.find("DOWN") > charPos && command.find("DOWN") < *Len)
 				{
 					GPIO_InitStructure.Pull = GPIO_PULLDOWN;
 				}
@@ -1105,218 +1105,284 @@ static int8_t CDC_Receive_FS(uint8_t* Buf, uint32_t *Len)
 	}
 	else if (command.find("READ GPIO") == 0)
 	{
-		const char *responseText = "Invalid Parameters\nREAD GPIO [PIN]\n\n";
-		unsigned int charPos = 9;
+		char *responseText = "Invalid Parameters\nREAD GPIO [PIN]\n";
+		unsigned int charPos = 10;
 		
-		GPIO_TypeDef *GPIO = 0;
+		while (*Len > charPos)
+		{	
+			GPIO_TypeDef *GPIO = 0;
 				
-		if (*Len > charPos)
-		{
-			switch (Buf[charPos])
+			if (*Len > charPos)
 			{
-			case 'A':
-			case 'a':
-				GPIO = GPIOA;
-				break;
-			case 'B':
-			case 'b':
-				GPIO = GPIOB;
-				break;
-			case 'C':
-			case 'c':
-				GPIO = GPIOC;
-				break;
-			default:
-				break;
+				switch (Buf[charPos])
+				{
+				case 'A':
+				case 'a':
+					GPIO = GPIOA;
+					break;
+				case 'B':
+				case 'b':
+					GPIO = GPIOB;
+					break;
+				case 'C':
+				case 'c':
+					GPIO = GPIOC;
+					break;
+				default:
+					break;
+				}
 			}
-		}
 		
-		charPos += 1;
+			charPos += 1;
 				
-		unsigned int pinNum = 16;
-		if (*Len > charPos)
-		{
-			if (Buf[charPos + 1] == ' ')
+			unsigned int pinNum = 16;
+			if (*Len > charPos)
 			{
-				char subbuf[1];
-				memcpy(subbuf, &Buf[charPos], 1);
-				pinNum = std::atoi(subbuf);
-				charPos += 2;
+				if (Buf[charPos + 1] == ' ')
+				{
+					char subbuf[1];
+					memcpy(subbuf, &Buf[charPos], 1);
+					pinNum = std::atoi(subbuf);
+					charPos += 2;
+				}
+				else
+				{
+					char subbuf[2];
+					memcpy(subbuf, &Buf[charPos], 2);
+					pinNum = std::atoi(subbuf);
+					charPos += 3;
+				}
 			}
-			else
+		
+			unsigned short GPIO_PIN = 0;
+			switch (pinNum)
 			{
-				char subbuf[2];
-				memcpy(subbuf, &Buf[charPos], 2);
-				pinNum = std::atoi(subbuf);
-				charPos += 3;
+			case 0:
+				GPIO_PIN = GPIO_PIN_0;
+				break;
+			case 1:
+				GPIO_PIN = GPIO_PIN_1;
+				break;
+			case 2:
+				GPIO_PIN = GPIO_PIN_2;
+				break;
+			case 3:
+				GPIO_PIN = GPIO_PIN_3;
+				break;
+			case 4:
+				GPIO_PIN = GPIO_PIN_4;
+				break;
+			case 5:
+				GPIO_PIN = GPIO_PIN_5;
+				break;
+			case 6:
+				GPIO_PIN = GPIO_PIN_6;
+				break;
+			case 7:
+				GPIO_PIN = GPIO_PIN_7;
+				break;
+			case 8:
+				GPIO_PIN = GPIO_PIN_8;
+				break;
+			case 9:
+				GPIO_PIN = GPIO_PIN_9;
+				break;
+			case 10:
+				GPIO_PIN = GPIO_PIN_10;
+				break;
+			case 11:
+				GPIO_PIN = GPIO_PIN_11;
+				break;
+			case 12:
+				GPIO_PIN = GPIO_PIN_12;
+				break;
+			case 13:
+				GPIO_PIN = GPIO_PIN_13;
+				break;
+			case 14:
+				GPIO_PIN = GPIO_PIN_14;
+				break;
+			case 15:
+				GPIO_PIN = GPIO_PIN_15;
+				break;
 			}
-		}
 		
-		unsigned short GPIO_PIN = 0;
-		switch (pinNum)
-		{
-		case 0:
-			GPIO_PIN = GPIO_PIN_0;
-			break;
-		case 1:
-			GPIO_PIN = GPIO_PIN_1;
-			break;
-		case 2:
-			GPIO_PIN = GPIO_PIN_2;
-			break;
-		case 3:
-			GPIO_PIN = GPIO_PIN_3;
-			break;
-		case 4:
-			GPIO_PIN = GPIO_PIN_4;
-			break;
-		case 5:
-			GPIO_PIN = GPIO_PIN_5;
-			break;
-		case 6:
-			GPIO_PIN = GPIO_PIN_6;
-			break;
-		case 7:
-			GPIO_PIN = GPIO_PIN_7;
-			break;
-		case 8:
-			GPIO_PIN = GPIO_PIN_8;
-			break;
-		case 9:
-			GPIO_PIN = GPIO_PIN_9;
-			break;
-		case 10:
-			GPIO_PIN = GPIO_PIN_10;
-			break;
-		case 11:
-			GPIO_PIN = GPIO_PIN_11;
-			break;
-		case 12:
-			GPIO_PIN = GPIO_PIN_12;
-			break;
-		case 13:
-			GPIO_PIN = GPIO_PIN_13;
-			break;
-		case 14:
-			GPIO_PIN = GPIO_PIN_14;
-			break;
-		case 15:
-			GPIO_PIN = GPIO_PIN_15;
-			break;
-		}
-		
-		if (GPIO != 0 && pinNum < 16)
-		{
-			GPIO_PinState state = HAL_GPIO_ReadPin(GPIO, GPIO_PIN);
+			if (GPIO != 0 && pinNum < 16)
+			{
+				GPIO_PinState state = HAL_GPIO_ReadPin(GPIO, GPIO_PIN);
 			
-			if (state == GPIO_PIN_SET)
-			{
-				responseText = "1\n";
-			}
-			else
-			{
-				responseText = "0\n";
+				if (state == GPIO_PIN_SET)
+				{
+					if (responseText[0] == 'I')
+					{
+						responseText = (char *)malloc(1 + 1);
+						responseText[0] = '\0';
+						sprintf(responseText, "1");
+					}
+					else
+					{
+						char * new_str;
+						new_str = (char *)malloc(strlen(responseText) + strlen(" 1") + 1);
+						new_str[0] = '\0';      // ensures the memory is an empty string
+						strcat(new_str, responseText);
+						strcat(new_str, " 1");
+						responseText = new_str;
+					}
+				}
+				else
+				{
+					if (responseText[0] == 'I')
+					{
+						responseText = (char *)malloc(1 + 1);
+						responseText[0] = '\0';
+						sprintf(responseText, "0");
+					}
+					else
+					{
+						char * new_str;
+						new_str = (char *)malloc(strlen(responseText) + strlen(" 0") + 1);
+						new_str[0] = '\0';      // ensures the memory is an empty string
+						strcat(new_str, responseText);
+						strcat(new_str, " 0");
+						responseText = new_str;
+					}						
+				}
 			}
 		}
+		
+		char * add_str = "\n";
+		char * new_str;
+		new_str = (char *)malloc(strlen(responseText) + strlen(add_str) + 1);
+		new_str[0] = '\0';         // ensures the memory is an empty string
+		strcat(new_str, responseText);
+		strcat(new_str, add_str);
+		responseText = new_str;
+		
 		CDC_Transmit_FS((uint8_t*)responseText, strlen(responseText));
 	}
 	else if (command.find("READ ADC") == 0)
 	{
-		char responseText[36] = "Invalid Parameters\nREAD ADC [PIN]\n\n";
+		char *responseText = "Invalid Parameters\nREAD ADC [PIN]\n";
 		unsigned int charPos = 9;
 		
-		char GPIO = ' ';
+		while (*Len > charPos)
+		{	
+			char GPIO = ' ';
 				
-		if (*Len > charPos)
-		{
-			switch (Buf[charPos])
+			if (*Len > charPos)
 			{
-			case 'A':
-			case 'a':
-				GPIO = 'A';
-				break;
-			case 'B':
-			case 'b':
-				GPIO = 'B';
-				break;
-			default:
-				break;
+				switch (Buf[charPos])
+				{
+				case 'A':
+				case 'a':
+					GPIO = 'A';
+					break;
+				case 'B':
+				case 'b':
+					GPIO = 'B';
+					break;
+				default:
+					break;
+				}
 			}
-		}
 		
-		charPos += 1;
+			charPos += 1;
 				
-		unsigned int pinNum = 16;
-		if (*Len > charPos)
-		{
-			if (Buf[charPos + 1] == ' ')
+			unsigned int pinNum = 16;
+			if (*Len > charPos)
 			{
-				char subbuf[1];
-				memcpy(subbuf, &Buf[charPos], 1);
-				pinNum = std::atoi(subbuf);
-				charPos += 2;
+				if (Buf[charPos + 1] == ' ')
+				{
+					char subbuf[1];
+					memcpy(subbuf, &Buf[charPos], 1);
+					pinNum = std::atoi(subbuf);
+					charPos += 2;
+				}
+				else
+				{
+					char subbuf[2];
+					memcpy(subbuf, &Buf[charPos], 2);
+					pinNum = std::atoi(subbuf);
+					charPos += 3;
+				}
 			}
-			else
-			{
-				char subbuf[2];
-				memcpy(subbuf, &Buf[charPos], 2);
-				pinNum = std::atoi(subbuf);
-				charPos += 3;
-			}
-		}
 		
-		if (GPIO == 'B')
-			pinNum += 8;
+			if (GPIO == 'B')
+				pinNum += 8;
 			
-		if (GPIO != ' ' && pinNum < 10)
-		{
-			ADC_ChannelConfTypeDef adcChannel;
+			if (GPIO != ' ' && pinNum < 10)
+			{
+				ADC_ChannelConfTypeDef adcChannel;
   
-			switch (pinNum)
-			{
-			case 0:
-				adcChannel.Channel = ADC_CHANNEL_0;
-				break;
-			case 1:
-				adcChannel.Channel = ADC_CHANNEL_1;
-				break;
-			case 2:
-				adcChannel.Channel = ADC_CHANNEL_2;
-				break;
-			case 3:
-				adcChannel.Channel = ADC_CHANNEL_3;
-				break;
-			case 4:
-				adcChannel.Channel = ADC_CHANNEL_4;
-				break;
-			case 5:
-				adcChannel.Channel = ADC_CHANNEL_5;
-				break;
-			case 6:
-				adcChannel.Channel = ADC_CHANNEL_6;
-				break;
-			case 7:
-				adcChannel.Channel = ADC_CHANNEL_7;
-				break;
-			case 8:
-				adcChannel.Channel = ADC_CHANNEL_8;
-				break;
-			case 9:
-				adcChannel.Channel = ADC_CHANNEL_9;
-				break;
-			}
+				switch (pinNum)
+				{
+				case 0:
+					adcChannel.Channel = ADC_CHANNEL_0;
+					break;
+				case 1:
+					adcChannel.Channel = ADC_CHANNEL_1;
+					break;
+				case 2:
+					adcChannel.Channel = ADC_CHANNEL_2;
+					break;
+				case 3:
+					adcChannel.Channel = ADC_CHANNEL_3;
+					break;
+				case 4:
+					adcChannel.Channel = ADC_CHANNEL_4;
+					break;
+				case 5:
+					adcChannel.Channel = ADC_CHANNEL_5;
+					break;
+				case 6:
+					adcChannel.Channel = ADC_CHANNEL_6;
+					break;
+				case 7:
+					adcChannel.Channel = ADC_CHANNEL_7;
+					break;
+				case 8:
+					adcChannel.Channel = ADC_CHANNEL_8;
+					break;
+				case 9:
+					adcChannel.Channel = ADC_CHANNEL_9;
+					break;
+				}
 			
-			adcChannel.Channel = ADC_CHANNEL_11;
-			adcChannel.SamplingTime = ADC_SAMPLETIME[pinNum];
+				adcChannel.Channel = ADC_CHANNEL_11;
+				adcChannel.SamplingTime = ADC_SAMPLETIME[pinNum];
 						
-			HAL_ADC_Start(&g_AdcHandle);
+				HAL_ADC_Start(&g_AdcHandle);
 			
-			if (HAL_ADC_PollForConversion(&g_AdcHandle, 1000000) == HAL_OK)
-			{
-				double ret = (HAL_ADC_GetValue(&g_AdcHandle) * 3.3 / 4096);
-				sprintf(responseText, "%1.6f\n", ret);
+				if (HAL_ADC_PollForConversion(&g_AdcHandle, 1000000) == HAL_OK)
+				{
+					double ret = (HAL_ADC_GetValue(&g_AdcHandle) * 3.3 / 4096);
+					if (responseText[0] == 'I')
+					{
+						responseText = (char *)malloc(8 + 1);
+						sprintf(responseText, "%1.6f", ret);
+					}
+					else
+					{
+						char * add_str = (char *)malloc(9 + 1);
+						sprintf(add_str, " %1.6f", ret);
+						char * new_str;
+						new_str = (char *)malloc(strlen(responseText) + strlen(add_str) + 1);
+						new_str[0] = '\0';       // ensures the memory is an empty string
+						strcat(new_str, responseText);
+						strcat(new_str, add_str);
+						responseText = new_str;
+					}
+				}
 			}
 		}
+		
+		char * add_str = "\n";
+		char * new_str;
+		new_str = (char *)malloc(strlen(responseText) + strlen(add_str) + 1);
+		new_str[0] = '\0';        // ensures the memory is an empty string
+		strcat(new_str, responseText);
+		strcat(new_str, add_str);
+		responseText = new_str;
 		
 		CDC_Transmit_FS((uint8_t*)responseText, strlen(responseText));
 	}
@@ -1491,16 +1557,7 @@ static int8_t CDC_Receive_FS(uint8_t* Buf, uint32_t *Len)
 	{
 		//help section
 		const char *responseText = \
-			"AVAILABLE COMMANDS\n\
-			INITIALIZE GPIO [PIN] [IN|OUT]  [PULLUP|PULLDOWN]\n\
-			INITIALIZE ADC [PIN] [CONVERSION TIME]\n\
-			INITIALIZE PWM CHANNEL [CHANNEL] [FREQUENCY]\n\
-			INITIALIZE PWM PIN [PIN]\nSET GPIO [PIN] [VALUE]\n\
-			READ GPIO [PIN]\nREAD ADC [PIN]\n\
-			SET PWM [PIN] [DUTY CYCLE 0.000000-1.000000]\n\
-			DISABLE RESPONSES\n\
-			ENABLE RESPONSES\n\
-			\n";
+			"AVAILABLE COMMANDS\nINITIALIZE GPIO [PIN] [IN|OUT]  [PULLUP|PULLDOWN]\nINITIALIZE ADC [PIN] [CONVERSION TIME]\nINITIALIZE PWM CHANNEL [CHANNEL] [FREQUENCY]\nINITIALIZE PWM PIN [PIN]\nSET GPIO [PIN] [VALUE]\nREAD GPIO [PIN]\nREAD ADC [PIN]\nSET PWM [PIN] [DUTY CYCLE 0.000000-1.000000]\nDISABLE RESPONSES\nENABLE RESPONSES\n\n";
 		if (RESPONSES)
 			CDC_Transmit_FS((uint8_t*)responseText, strlen(responseText));
 	}
