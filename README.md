@@ -20,9 +20,11 @@ LINUX
 # Specs
 
 ADC 
+  * 10 channels
   * 12 bit
   
 PWM
+  * 15 channels
   * < 1098hz: 16 bit
   * 1098-2196hz: 15 bit
   * 2196-4392hz: 14 bit
