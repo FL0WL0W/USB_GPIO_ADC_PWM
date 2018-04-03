@@ -318,13 +318,26 @@ static int8_t CDC_Control_FS(uint8_t cmd, uint8_t* pbuf, uint16_t length)
 //			ADC_SAMPLETIME_71CYCLES_5		5.958 us
 //			ADC_SAMPLETIME_239CYCLES_5		19.96 us
 unsigned int ADC_SAMPLETIME[10];
+bool RESPONSES = true;
 static int8_t CDC_Receive_FS(uint8_t* Buf, uint32_t *Len)
 {
 	/* USER CODE BEGIN 6 */	
 	std::string command = std::string((char *)Buf, *Len);
 	std::transform(command.begin(), command.end(), command.begin(),::toupper);
 	
-	if (command.find("INITIALIZE GPIO") == 0)
+	if (command.find("DISABLE RESPONSES") == 0)
+	{
+		char responseText[21] = "RESPONSES DISABLED!\n";
+		CDC_Transmit_FS((uint8_t*)responseText, strlen(responseText));
+		RESPONSES = false;
+	}	
+	else if (command.find("ENABLE RESPONSES") == 0)
+	{
+		char responseText[20] = "RESPONSES ENABLED!\n";
+		CDC_Transmit_FS((uint8_t*)responseText, strlen(responseText));
+		RESPONSES = true;
+	}	
+	else if (command.find("INITIALIZE GPIO") == 0)
 	{
 		char responseText[71] = "Invalid Parameters\nINITIALIZE GPIO [PIN] [IN|OUT]  [PULLUP|PULLDOWN]\n\n";
 		unsigned int charPos = 16;
@@ -519,7 +532,8 @@ static int8_t CDC_Receive_FS(uint8_t* Buf, uint32_t *Len)
 			}
 		}
 		
-		CDC_Transmit_FS((uint8_t*)responseText, strlen(responseText));
+		if (RESPONSES)
+			CDC_Transmit_FS((uint8_t*)responseText, strlen(responseText));
 	}
 	else if (command.find("INITIALIZE ADC") == 0)
 	{
@@ -643,7 +657,8 @@ static int8_t CDC_Receive_FS(uint8_t* Buf, uint32_t *Len)
 			ADC_SAMPLETIME[pinNum] = conversionSpeed;
 		}
 		
-		CDC_Transmit_FS((uint8_t*)responseText, strlen(responseText));
+		if (RESPONSES)
+			CDC_Transmit_FS((uint8_t*)responseText, strlen(responseText));
 	}
 	else if (command.find("INITIALIZE PWM CHANNEL") == 0)
 	{
@@ -712,7 +727,8 @@ static int8_t CDC_Receive_FS(uint8_t* Buf, uint32_t *Len)
 			}
 		}
 		
-		CDC_Transmit_FS((uint8_t*)responseText, strlen(responseText));
+		if (RESPONSES)
+			CDC_Transmit_FS((uint8_t*)responseText, strlen(responseText));
 	}
 	else if (command.find("INITIALIZE PWM PIN") == 0)
 	{
@@ -895,7 +911,8 @@ static int8_t CDC_Receive_FS(uint8_t* Buf, uint32_t *Len)
 			}
 		}
 		
-		CDC_Transmit_FS((uint8_t*)responseText, strlen(responseText));
+		if (RESPONSES)
+			CDC_Transmit_FS((uint8_t*)responseText, strlen(responseText));
 	}
 	else if (command.find("SET GPIO") == 0)
 	{
@@ -1083,7 +1100,8 @@ static int8_t CDC_Receive_FS(uint8_t* Buf, uint32_t *Len)
 				break;
 			}
 		}
-		CDC_Transmit_FS((uint8_t*)responseText, strlen(responseText));
+		if (RESPONSES)
+			CDC_Transmit_FS((uint8_t*)responseText, strlen(responseText));
 	}
 	else if (command.find("READ GPIO") == 0)
 	{
@@ -1466,13 +1484,15 @@ static int8_t CDC_Receive_FS(uint8_t* Buf, uint32_t *Len)
 			}
 		}
 		
-		CDC_Transmit_FS((uint8_t*)responseText, strlen(responseText));
+		if (RESPONSES)
+			CDC_Transmit_FS((uint8_t*)responseText, strlen(responseText));
 	}
 	else
 	{
 		//help section
 		const char *responseText = "AVAILABLE COMMANDS\nINITIALIZE GPIO [PIN] [IN|OUT]  [PULLUP|PULLDOWN]\nINITIALIZE ADC [PIN] [CONVERSION TIME]\nINITIALIZE PWM CHANNEL [CHANNEL] [FREQUENCY]\nINITIALIZE PWM PIN [PIN]\nSET GPIO [PIN] [VALUE]\nREAD GPIO [PIN]\nREAD ADC [PIN]\nSET PWM [PIN] [DUTY CYCLE 0.000000-1.000000]\n\n";
-		CDC_Transmit_FS((uint8_t*)responseText, strlen(responseText));
+		if (RESPONSES)
+			CDC_Transmit_FS((uint8_t*)responseText, strlen(responseText));
 	}
 	
 	USBD_CDC_SetRxBuffer(&hUsbDeviceFS, &Buf[0]);
