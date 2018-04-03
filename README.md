@@ -1,6 +1,6 @@
 # Overview
 
-This project aims to create an easy to use usb interface to control an STM32F103C8 (blue pill). It has the ability to read and write the GPIO pins, read the ADC pins and return the voltage (12 bit resolution), and control the pwm outputs (up to 16 bit resolution and between 1 - 250 khz frequency).
+This project aims to create an easy to use usb interface to control an STM32F103C8 (blue pill). It has the ability to read and write the GPIO pins, read the ADC pins and return the voltage (12 bit resolution), and control the pwm outputs (up to 16 bit resolution and between 1 Hz - 250 kHz frequency).
 
 # Drivers
 
@@ -11,7 +11,12 @@ WINDOWS
 LINUX
   * To us this device on Linux you will need the ttyACM drivers enabled in the kernel. This driver is usually enabled by default.
   * The device will show up in /dev as a ttyACM device
-  
+
+# Flashing STM32F103C8
+
+1. The bin file to load onto the STM32F103C8 is located in the releases folder.
+2. The STM32F103C8 can be flashed with multiple different methods. There is an excelent tutorial on how to do that here http://wiki.stm32duino.com/index.php?title=Burning_the_bootloader
+
 # HOW-TO
 
 GPIO
@@ -44,3 +49,7 @@ PWM
   3. Set a PWM pin. SET PWM [PIN] [DUTY CYCLE 0.000000-1.000000]
       * The pin must first be initialized as a PWM pin.
       * Duty cycle represented between 0.000000 for always low to 1.000000 for always high.
+      
+Turn off response messages
+  1. It is sometimes necessary to disable the response messages so as not to interfere with READ ADC and READ GPIO. This can be done by sending DISABLE RESPONSES
+  2. To re-enable responses, send ENABLE RESPONSES
