@@ -322,8 +322,10 @@ bool RESPONSES = true;
 static int8_t CDC_Receive_FS(uint8_t* Buf, uint32_t *Len)
 {
 	/* USER CODE BEGIN 6 */	
-	std::string command = std::string((char *)Buf, *Len);
+	int length = *Len;
+	std::string command = std::string((char *)Buf, length);
 	std::transform(command.begin(), command.end(), command.begin(),::toupper);
+	USBD_CDC_SetRxBuffer(&hUsbDeviceFS, &Buf[0]);
 	
 	if (command.find("DISABLE RESPONSES") == 0)
 	{
@@ -344,9 +346,9 @@ static int8_t CDC_Receive_FS(uint8_t* Buf, uint32_t *Len)
 		
 		GPIO_TypeDef *GPIO = 0;
 				
-		if (*Len > charPos)
+		if (length > charPos)
 		{
-			switch (Buf[charPos])
+			switch (command[charPos])
 			{
 			case 'A':
 			case 'a':
@@ -368,19 +370,21 @@ static int8_t CDC_Receive_FS(uint8_t* Buf, uint32_t *Len)
 		charPos += 1;
 				
 		unsigned int pinNum = 16;
-		if (*Len > charPos)
+		if (length > charPos)
 		{
-			if (Buf[charPos + 1] == ' ')
+			if (command[charPos + 1] == ' ')
 			{
-				char subbuf[1];
-				memcpy(subbuf, &Buf[charPos], 1);
+				char subbuf[2];
+				subbuf[1] = '\0';
+				memcpy(subbuf, &command[charPos], 1);
 				pinNum = std::atoi(subbuf);
 				charPos += 2;
 			}
 			else
 			{
-				char subbuf[2];
-				memcpy(subbuf, &Buf[charPos], 2);
+				char subbuf[3];
+				subbuf[2] = '\0';
+				memcpy(subbuf, &command[charPos], 2);
 				pinNum = std::atoi(subbuf);
 				charPos += 3;
 			}
@@ -439,9 +443,9 @@ static int8_t CDC_Receive_FS(uint8_t* Buf, uint32_t *Len)
 			break;
 		}
 		
-		if (*Len > charPos && GPIO != 0 && pinNum < 16)
+		if (length > charPos && GPIO != 0 && pinNum < 16)
 		{
-			if (Buf[charPos] == 'I' || Buf[charPos] == 'i')
+			if (command[charPos] == 'I' || command[charPos] == 'i')
 			{
 				GPIO_InitTypeDef GPIO_InitStructure;
 		
@@ -450,11 +454,11 @@ static int8_t CDC_Receive_FS(uint8_t* Buf, uint32_t *Len)
 				GPIO_InitStructure.Speed = GPIO_SPEED_HIGH;
 				GPIO_InitStructure.Pull = GPIO_NOPULL;
 				GPIO_InitStructure.Mode = GPIO_MODE_INPUT;
-				if (command.find("UP") > charPos && command.find("UP") < *Len)
+				if (command.find("UP") > charPos && command.find("UP") < length)
 				{
 					GPIO_InitStructure.Pull = GPIO_PULLUP;
 				}
-				else if (command.find("DOWN") > charPos && command.find("DOWN") < *Len)
+				else if (command.find("DOWN") > charPos && command.find("DOWN") < length)
 				{
 					GPIO_InitStructure.Pull = GPIO_PULLDOWN;
 				}
@@ -506,7 +510,7 @@ static int8_t CDC_Receive_FS(uint8_t* Buf, uint32_t *Len)
 					}
 				}
 			}
-			else if (Buf[charPos] == 'O' || Buf[charPos] == 'o')
+			else if (command[charPos] == 'O' || command[charPos] == 'o')
 			{
 				GPIO_InitTypeDef GPIO_InitStructure;
 		
@@ -542,9 +546,9 @@ static int8_t CDC_Receive_FS(uint8_t* Buf, uint32_t *Len)
 		
 		GPIO_TypeDef *GPIO = 0;
 				
-		if (*Len > charPos)
+		if (length > charPos)
 		{
-			switch (Buf[charPos])
+			switch (command[charPos])
 			{
 			case 'A':
 			case 'a':
@@ -562,19 +566,21 @@ static int8_t CDC_Receive_FS(uint8_t* Buf, uint32_t *Len)
 		charPos += 1;
 				
 		unsigned int pinNum = 16;
-		if (*Len > charPos)
+		if (length > charPos)
 		{
-			if (Buf[charPos + 1] == ' ')
+			if (command[charPos + 1] == ' ')
 			{
-				char subbuf[1];
-				memcpy(subbuf, &Buf[charPos], 1);
+				char subbuf[2];
+				subbuf[1] = '\0';
+				memcpy(subbuf, &command[charPos], 1);
 				pinNum = std::atoi(subbuf);
 				charPos += 2;
 			}
 			else
 			{
-				char subbuf[2];
-				memcpy(subbuf, &Buf[charPos], 2);
+				char subbuf[3];
+				subbuf[2] = '\0';
+				memcpy(subbuf, &command[charPos], 2);
 				pinNum = std::atoi(subbuf);
 				charPos += 3;
 			}
@@ -668,9 +674,9 @@ static int8_t CDC_Receive_FS(uint8_t* Buf, uint32_t *Len)
 		
 		TIM_HandleTypeDef *s_TimerInstance;
 		
-		if (*Len > charPos)
+		if (length > charPos)
 		{
-			switch (Buf[charPos])
+			switch (command[charPos])
 			{
 			case '1':
 				s_TimerInstance = &s_TimerInstance1;
@@ -690,12 +696,13 @@ static int8_t CDC_Receive_FS(uint8_t* Buf, uint32_t *Len)
 		charPos += 2;
 		
 		unsigned int freq = 0;
-		if (*Len > charPos)
+		if (length > charPos)
 		{
-			char subbuf[*Len - charPos];
-			memcpy(subbuf, &Buf[charPos], *Len - charPos);
+			char subbuf[length - charPos + 1];
+			subbuf[length - charPos] = '\0';
+			memcpy(subbuf, &command[charPos], length - charPos);
 			freq = std::atoi(subbuf);
-			charPos = *Len;
+			charPos = length;
 		}
 		
 		if (freq > 0  && s_TimerInstance != 0)
@@ -737,9 +744,9 @@ static int8_t CDC_Receive_FS(uint8_t* Buf, uint32_t *Len)
 		
 		GPIO_TypeDef *GPIO = 0;
 				
-		if (*Len > charPos)
+		if (length > charPos)
 		{
-			switch (Buf[charPos])
+			switch (command[charPos])
 			{
 			case 'A':
 			case 'a':
@@ -757,19 +764,21 @@ static int8_t CDC_Receive_FS(uint8_t* Buf, uint32_t *Len)
 		charPos += 1;
 				
 		unsigned int pinNum = 16;
-		if (*Len > charPos)
+		if (length > charPos)
 		{
-			if (Buf[charPos + 1] == ' ')
+			if (command[charPos + 1] == ' ')
 			{
-				char subbuf[1];
-				memcpy(subbuf, &Buf[charPos], 1);
+				char subbuf[2];
+				subbuf[1] = '\0';
+				memcpy(subbuf, &command[charPos], 1);
 				pinNum = std::atoi(subbuf);
 				charPos += 2;
 			}
 			else
 			{
-				char subbuf[2];
-				memcpy(subbuf, &Buf[charPos], 2);
+				char subbuf[3];
+				subbuf[2] = '\0';
+				memcpy(subbuf, &command[charPos], 2);
 				pinNum = std::atoi(subbuf);
 				charPos += 3;
 			}
@@ -921,9 +930,9 @@ static int8_t CDC_Receive_FS(uint8_t* Buf, uint32_t *Len)
 		
 		GPIO_TypeDef *GPIO = 0;
 				
-		if (*Len > charPos)
+		if (length > charPos)
 		{
-			switch (Buf[charPos])
+			switch (command[charPos])
 			{
 			case 'A':
 			case 'a':
@@ -945,19 +954,21 @@ static int8_t CDC_Receive_FS(uint8_t* Buf, uint32_t *Len)
 		charPos += 1;
 				
 		unsigned int pinNum = 16;
-		if (*Len > charPos)
+		if (length > charPos)
 		{
-			if (Buf[charPos + 1] == ' ')
+			if (command[charPos + 1] == ' ')
 			{
-				char subbuf[1];
-				memcpy(subbuf, &Buf[charPos], 1);
+				char subbuf[2];
+				subbuf[1] = '\0';
+				memcpy(subbuf, &command[charPos], 1);
 				pinNum = std::atoi(subbuf);
 				charPos += 2;
 			}
 			else
 			{
-				char subbuf[2];
-				memcpy(subbuf, &Buf[charPos], 2);
+				char subbuf[3];
+				subbuf[2] = '\0';
+				memcpy(subbuf, &command[charPos], 2);
 				pinNum = std::atoi(subbuf);
 				charPos += 3;
 			}
@@ -1016,9 +1027,9 @@ static int8_t CDC_Receive_FS(uint8_t* Buf, uint32_t *Len)
 			break;
 		}
 		
-		if (*Len > charPos && GPIO != 0 && pinNum < 16)
+		if (length > charPos && GPIO != 0 && pinNum < 16)
 		{
-			switch (Buf[charPos])
+			switch (command[charPos])
 			{
 			case 'T':
 			case 't':
@@ -1059,9 +1070,9 @@ static int8_t CDC_Receive_FS(uint8_t* Buf, uint32_t *Len)
 				}
 				break;
 			case 'O':
-				if (*Len > charPos + 1)
+				if (length > charPos + 1)
 				{
-					switch (Buf[charPos + 1])
+					switch (command[charPos + 1])
 					{
 					case 'N':
 					case 'n':
@@ -1105,16 +1116,16 @@ static int8_t CDC_Receive_FS(uint8_t* Buf, uint32_t *Len)
 	}
 	else if (command.find("READ GPIO") == 0)
 	{
-		char *responseText = "Invalid Parameters\nREAD GPIO [PIN]\n";
+		char responseText[36] = "Invalid Parameters\nREAD GPIO [PIN]\n";
 		unsigned int charPos = 10;
 		
-		while (*Len > charPos)
+		while (length > charPos)
 		{	
 			GPIO_TypeDef *GPIO = 0;
 				
-			if (*Len > charPos)
+			if (length > charPos)
 			{
-				switch (Buf[charPos])
+				switch (command[charPos])
 				{
 				case 'A':
 				case 'a':
@@ -1136,19 +1147,21 @@ static int8_t CDC_Receive_FS(uint8_t* Buf, uint32_t *Len)
 			charPos += 1;
 				
 			unsigned int pinNum = 16;
-			if (*Len > charPos)
+			if (length > charPos)
 			{
-				if (Buf[charPos + 1] == ' ')
+				if (command[charPos + 1] == ' ')
 				{
-					char subbuf[1];
-					memcpy(subbuf, &Buf[charPos], 1);
+					char subbuf[2];
+					subbuf[1] = '\0';
+					memcpy(subbuf, &command[charPos], 1);
 					pinNum = std::atoi(subbuf);
 					charPos += 2;
 				}
 				else
 				{
-					char subbuf[2];
-					memcpy(subbuf, &Buf[charPos], 2);
+					char subbuf[3];
+					subbuf[2] = '\0';
+					memcpy(subbuf, &command[charPos], 2);
 					pinNum = std::atoi(subbuf);
 					charPos += 3;
 				}
@@ -1215,63 +1228,43 @@ static int8_t CDC_Receive_FS(uint8_t* Buf, uint32_t *Len)
 				{
 					if (responseText[0] == 'I')
 					{
-						responseText = (char *)malloc(1 + 1);
-						responseText[0] = '\0';
 						sprintf(responseText, "1");
 					}
 					else
 					{
-						char * new_str;
-						new_str = (char *)malloc(strlen(responseText) + strlen(" 1") + 1);
-						new_str[0] = '\0';      // ensures the memory is an empty string
-						strcat(new_str, responseText);
-						strcat(new_str, " 1");
-						responseText = new_str;
+						sprintf(responseText, "%s1", responseText);
 					}
 				}
 				else
 				{
 					if (responseText[0] == 'I')
 					{
-						responseText = (char *)malloc(1 + 1);
-						responseText[0] = '\0';
 						sprintf(responseText, "0");
 					}
 					else
 					{
-						char * new_str;
-						new_str = (char *)malloc(strlen(responseText) + strlen(" 0") + 1);
-						new_str[0] = '\0';      // ensures the memory is an empty string
-						strcat(new_str, responseText);
-						strcat(new_str, " 0");
-						responseText = new_str;
+						sprintf(responseText, "%s0", responseText);
 					}						
 				}
 			}
 		}
 		
-		char * add_str = "\n";
-		char * new_str;
-		new_str = (char *)malloc(strlen(responseText) + strlen(add_str) + 1);
-		new_str[0] = '\0';         // ensures the memory is an empty string
-		strcat(new_str, responseText);
-		strcat(new_str, add_str);
-		responseText = new_str;
+		sprintf(responseText, "%s\n", responseText);
 		
 		CDC_Transmit_FS((uint8_t*)responseText, strlen(responseText));
 	}
 	else if (command.find("READ ADC") == 0)
 	{
-		char *responseText = "Invalid Parameters\nREAD ADC [PIN]\n";
+		char responseText[100] = "Invalid Parameters\nREAD ADC [PIN]\n";
 		unsigned int charPos = 9;
 		
-		while (*Len > charPos)
+		while (length > charPos)
 		{	
 			char GPIO = ' ';
 				
-			if (*Len > charPos)
+			if (length > charPos)
 			{
-				switch (Buf[charPos])
+				switch (command[charPos])
 				{
 				case 'A':
 				case 'a':
@@ -1289,19 +1282,21 @@ static int8_t CDC_Receive_FS(uint8_t* Buf, uint32_t *Len)
 			charPos += 1;
 				
 			unsigned int pinNum = 16;
-			if (*Len > charPos)
+			if (length > charPos)
 			{
-				if (Buf[charPos + 1] == ' ')
+				if (command[charPos + 1] == ' ')
 				{
-					char subbuf[1];
-					memcpy(subbuf, &Buf[charPos], 1);
+					char subbuf[2];
+					subbuf[1] = '\0';
+					memcpy(subbuf, &command[charPos], 1);
 					pinNum = std::atoi(subbuf);
 					charPos += 2;
 				}
 				else
 				{
-					char subbuf[2];
-					memcpy(subbuf, &Buf[charPos], 2);
+					char subbuf[3];
+					subbuf[2] = '\0';
+					memcpy(subbuf, &command[charPos], 2);
 					pinNum = std::atoi(subbuf);
 					charPos += 3;
 				}
@@ -1313,7 +1308,9 @@ static int8_t CDC_Receive_FS(uint8_t* Buf, uint32_t *Len)
 			if (GPIO != ' ' && pinNum < 10)
 			{
 				ADC_ChannelConfTypeDef adcChannel;
-  
+				
+				adcChannel.Rank = ADC_REGULAR_RANK_1;
+				
 				switch (pinNum)
 				{
 				case 0:
@@ -1348,41 +1345,34 @@ static int8_t CDC_Receive_FS(uint8_t* Buf, uint32_t *Len)
 					break;
 				}
 			
-				adcChannel.Channel = ADC_CHANNEL_11;
 				adcChannel.SamplingTime = ADC_SAMPLETIME[pinNum];
 						
+				HAL_ADC_ConfigChannel(&g_AdcHandle, &adcChannel);
+				
 				HAL_ADC_Start(&g_AdcHandle);
 			
 				if (HAL_ADC_PollForConversion(&g_AdcHandle, 1000000) == HAL_OK)
 				{
-					double ret = (HAL_ADC_GetValue(&g_AdcHandle) * 3.3 / 4096);
+					double ret = (HAL_ADC_GetValue(&g_AdcHandle) * 3.3 / 4095);
 					if (responseText[0] == 'I')
 					{
-						responseText = (char *)malloc(8 + 1);
 						sprintf(responseText, "%1.6f", ret);
 					}
 					else
 					{
-						char * add_str = (char *)malloc(9 + 1);
-						sprintf(add_str, " %1.6f", ret);
-						char * new_str;
-						new_str = (char *)malloc(strlen(responseText) + strlen(add_str) + 1);
-						new_str[0] = '\0';       // ensures the memory is an empty string
-						strcat(new_str, responseText);
-						strcat(new_str, add_str);
-						responseText = new_str;
+						sprintf(responseText, "%s %1.6f", responseText, ret);
 					}
 				}
+				
+				HAL_ADC_Stop(&g_AdcHandle);
+				
+				adcChannel.Rank = ADC_REGULAR_RANK_16;
+				
+				HAL_ADC_ConfigChannel(&g_AdcHandle, &adcChannel);
 			}
 		}
 		
-		char * add_str = "\n";
-		char * new_str;
-		new_str = (char *)malloc(strlen(responseText) + strlen(add_str) + 1);
-		new_str[0] = '\0';        // ensures the memory is an empty string
-		strcat(new_str, responseText);
-		strcat(new_str, add_str);
-		responseText = new_str;
+		sprintf(responseText, "%s\n", responseText);
 		
 		CDC_Transmit_FS((uint8_t*)responseText, strlen(responseText));
 	}
@@ -1394,9 +1384,9 @@ static int8_t CDC_Receive_FS(uint8_t* Buf, uint32_t *Len)
 		
 		GPIO_TypeDef *GPIO = 0;
 				
-		if (*Len > charPos)
+		if (length > charPos)
 		{
-			switch (Buf[charPos])
+			switch (command[charPos])
 			{
 			case 'A':
 			case 'a':
@@ -1414,33 +1404,36 @@ static int8_t CDC_Receive_FS(uint8_t* Buf, uint32_t *Len)
 		charPos += 1;
 				
 		unsigned int pinNum = 16;
-		if (*Len > charPos)
+		if (length > charPos)
 		{
-			if (Buf[charPos + 1] == ' ')
+			if (command[charPos + 1] == ' ')
 			{
-				char subbuf[1];
-				memcpy(subbuf, &Buf[charPos], 1);
+				char subbuf[2];
+				subbuf[1] = '\0';
+				memcpy(subbuf, &command[charPos], 1);
 				pinNum = std::atoi(subbuf);
 				charPos += 2;
 			}
 			else
 			{
-				char subbuf[2];
-				memcpy(subbuf, &Buf[charPos], 2);
+				char subbuf[3];
+				subbuf[2] = '\0';
+				memcpy(subbuf, &command[charPos], 2);
 				pinNum = std::atoi(subbuf);
 				charPos += 3;
 			}
 		}
 		
 		float dutyCycle = -1;
-		if (*Len > charPos)
+		if (length > charPos)
 		{
-			char subbuf[*Len - charPos];
-			memcpy(subbuf, &Buf[charPos], *Len - charPos);
+			char subbuf[length - charPos + 1];
+			subbuf[length - charPos] = '\0';
+			memcpy(subbuf, &command[charPos], length - charPos);
 			dutyCycle = std::atof(subbuf);
 			if (dutyCycle > 1)
 				dutyCycle - 1;
-			charPos = *Len;
+			charPos = length;
 		}
 		
 		unsigned int TIM_CHANNEL = 0;
@@ -1562,7 +1555,6 @@ static int8_t CDC_Receive_FS(uint8_t* Buf, uint32_t *Len)
 			CDC_Transmit_FS((uint8_t*)responseText, strlen(responseText));
 	}
 	
-	USBD_CDC_SetRxBuffer(&hUsbDeviceFS, &Buf[0]);
 	USBD_CDC_ReceivePacket(&hUsbDeviceFS);
   
 	return (USBD_OK);
