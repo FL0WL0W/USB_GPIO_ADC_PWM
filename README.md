@@ -22,6 +22,7 @@ LINUX
 ADC 
   * 10 channels
   * 12 bit
+  * ~5 KSPS
   
 PWM
   * 15 channels
