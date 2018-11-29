@@ -34,7 +34,7 @@ PWM
   * 17.6kHz-35.1kHz: 11 bit
   * 35.1kHz-70.3kHz: 10 bit
   * 70.3kHz-140.5kHz: 9 bit
-  * 140.5kHz-250kHz: 8 bot
+  * 140.5kHz-250kHz: 8 bit
 
 # HOW-TO
 
