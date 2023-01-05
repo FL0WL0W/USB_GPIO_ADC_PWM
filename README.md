@@ -12,10 +12,10 @@ LINUX
   * To us this device on Linux you will need the ttyACM drivers enabled in the kernel. This driver is usually enabled by default.
   * The device will show up in /dev as a ttyACM device
 
-# Flashing STM32F103C8
-
-1. The bin file to load onto the STM32F103C8 is located in the releases folder.
-2. The STM32F103C8 can be flashed with multiple different methods. There is an excelent tutorial on how to do that here http://wiki.stm32duino.com/index.php?title=Burning_the_bootloader
+# Flashing STM32F103
+1. The bin file to load onto the STM32F103C8 is located <a href="https://github.com/FL0WL0W/USB_GPIO_ADC_PWM/releases">here</a> which can be loaded using the STM32CubeProgrammer from ST. STM32CubeProgrammer can be connected to the STM32F103 over UART or with an STLink. STM32CubeProgrammer can be downloaded <a href="https://www.st.com/en/development-tools/stm32cubeprog.html#get-software">here</a>.
+2. Navigate to the Erasing and Programming tab and select the bin file and click "Start Programming" <br>
+![image](https://user-images.githubusercontent.com/1595263/178074897-7f7d68ad-5cc3-4730-8d61-423ffc6df184.png)
 
 # Specs
 
